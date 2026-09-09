@@ -1,0 +1,41 @@
+Package: networkGen
+Type: Package
+Title: Build PCSF Networks from Kinase-Activity Data
+Version: 0.1.0
+Authors@R: person("Dora", "Schuller", email = "dschuller@pamgene.com", role = c("aut", "cre"))
+Description: Builds prize-collecting Steiner forest (PCSF) networks from
+    kinase-activity (UKA) data, optionally paired with sensitivity data.
+    Foundation package of the network suite (see networkScore, networkPlot)
+    -- no scoring, enrichment, or plotting logic lives here.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+LazyData: true
+LazyDataCompression: xz
+Depends: R (>= 4.1)
+Imports:
+    dplyr,
+    igraph,
+    PCSF,
+    readr,
+    rlang,
+    tibble,
+    tidyr,
+    stringr,
+    data.table,
+    furrr,
+    purrr,
+    stats,
+    tools,
+    utils
+Remotes:
+    IOR-Bioinformatics/PCSF
+Suggests:
+    future,
+    testthat (>= 3.0.0),
+    callr,
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr

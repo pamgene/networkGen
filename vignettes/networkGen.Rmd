@@ -1,0 +1,235 @@
+---
+title: "Getting started with networkGen"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with networkGen}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`networkGen` builds a PCSF (prize-collecting Steiner forest) network from
+kinase-activity data, optionally paired with sensitivity data. This vignette
+covers: a tiny, hand-verifiable toy example; PCSF's key parameters; and
+`run_network_grid()`, the one entry point for real, save-worthy output --
+whether that's one network or many, kinase-only or paired, one parameter
+combination or a whole grid of them.
+
+```{r setup}
+library(networkGen)
+```
+
+## 1. A tiny, verifiable toy example
+
+Terminal nodes `A`, `B`, `C` need connecting. Two candidate paths exist
+between `B` and `C`: a cheap one through `D` (total cost 0.2), and a more
+expensive one through `E` and `F` (total cost 0.3). PCSF should pick the
+cheap path -- `D` should appear in the result, `E` and `F` should not.
+
+```{r toy-data}
+toy_ppi <- data.frame(
+  head = c("A", "B", "D", "B", "E", "F"),
+  tail = c("B", "D", "C", "E", "F", "C"),
+  cost = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+)
+toy_uka <- data.frame(
+  name = c("A", "B", "C"), prize = c(0.9, 0.9, 0.9),
+  type = "Kinase", LogFC = c(1, 1, 1)
+)
+```
+
+```{r toy-build}
+toy_result <- generate_kinase_network(
+  uka = toy_uka, ppi_network = toy_ppi,
+  spec_cutoff = 0, b = 10, condition = "toy_example", seed = 12345, n = 2
+)
+cat(paste(toy_result$edges$from, "-", toy_result$edges$to), sep = "\n")
+```
+
+`A - B`, `B - D`, `D - C` -- the cheap path through `D`. `E` and `F` never
+appear.
+
+## 2. Key parameters
+
+- `n` -- number of randomized PCSF runs combined into one consensus network.
+  Default 8; lowered to `n = 2` throughout this vignette for faster output.
+- `b` -- multiplier on terminal-node prizes. A terminal is only included if
+  `b * prize` exceeds `w`, the fixed cost of connecting it to the network --
+  raise `b` (or lower `w`) if PCSF reports it can't find a subnetwork. The
+  examples below use `b = 10`, well above the default of `1.5`, because this
+  vignette's prize values (percentile ranks, 0-1) times `1.5` don't clear
+  `w`'s default cost of `10` for most nodes.
+- `w`, `r`, `mu` -- less commonly tuned: `w` is the connection cost `b`
+  trades off against; `r` is the per-run random noise fraction; `mu`
+  penalizes routing through high-degree hub genes.
+
+Full parameter documentation: `` ?generate_kinase_network ``.
+
+`networkGen` also ships a real reference PPI network as package data --
+`ppi_networkv12` (the default `ppi_network`, used automatically if you don't
+pass one), plus two narrower variants: `ppi_networkv12_filt`, and
+`ppi_networkv12_502_kins` (the smallest -- restricted to 502 kinases, ~107K
+edges vs. 1.1M for the full network -- good enough for a kinase-activity
+network and much faster, used throughout the rest of this vignette):
+
+```{r ref-network}
+nrow(ppi_networkv12)
+nrow(ppi_networkv12_502_kins)
+head(ppi_networkv12_502_kins)
+```
+
+## 3. Running multiple networks, optionally in parallel
+
+`run_network_grid()` is the one entry point for this package -- one network
+or many, kinase-only or paired, one parameter combination or a whole grid of
+them. You specify the parameters to tune (e.g. cutoffs, `b`, `ppi_network`,
+which datasets) and `run_network_grid()` builds a grid of every combination.
+
+For each condition and parameter combination, `run_network_grid()`:
+
+1. filters the kinase-activity data to its top hits (`spec_cutoff` on
+   specificity, `perc_cutoff` on percentile rank)
+2. creates one output folder, with `params.csv` recording exactly what
+   parameters produced it
+3. runs the network and writes its results into that same folder
+
+Networks run in parallel if a `future` plan is set (see the end of this
+section); sequentially otherwise.
+
+### Multiple datasets, multiple `spec_cutoff` and `b` values
+
+UKA exports are named `UKA_<PTK|STK>_<number>_<dataset name>.csv`. 3 real
+timepoints below, each a real PTK+STK pair:
+
+```{r multidataset-load}
+multidataset_paths <- list.files(
+  "example_data/multidataset", pattern = "\\.csv$", recursive = TRUE, full.names = TRUE
+)
+basename(multidataset_paths)
+
+raw_multidataset <- load_uka_dataset_files(multidataset_paths)
+table(raw_multidataset$dataset, raw_multidataset$kinase_type)
+```
+
+This is raw (not pre-cleaned) data, so `run_network_grid()` needs a
+`clean_fn` -- `Sgroup_contrast` is the condition column
+`clean_uka_to_kinograte()` produces. `spec_cutoff` **and** `b` as vectors
+grid every dataset's condition against every cutoff x `b` combination --
+3 datasets x 2 `spec_cutoff` values x 2 `b` values below, no loop written
+(`perc_cutoff` and `ppi_network` could grid the same way; kept fixed here so
+the example stays readable):
+
+```{r multidataset-build}
+multidataset_dir <- tempfile()
+dir.create(multidataset_dir)
+
+multidataset_results <- run_network_grid(
+  raw_multidataset, clean_fn = clean_uka_to_kinograte, condition_col = "Sgroup_contrast",
+  spec_cutoff = c(1, 1.5), perc_cutoff = 0.5, b = c(10, 15), ppi_network = ppi_networkv12_502_kins,
+  respath = multidataset_dir, write = TRUE, n = 2
+)
+
+for (item in multidataset_results) {
+  cat(item$meta$dataset, "|", item$meta$condition, "| spec_cutoff =", item$meta$spec_cutoff,
+    "| b =", item$meta$b, ": ",
+    if (is.null(item$result)) "no subnetwork" else paste(nrow(item$result$nodes), "nodes"), "\n",
+    sep = ""
+  )
+}
+
+list.files(multidataset_dir, recursive = TRUE)
+```
+
+Four folders (one per `spec_cutoff` x `b` combination), each holding all 3
+datasets' `nodes`/`edges`/`wc_df` CSVs plus one shared `params.csv` -- not
+one folder per (dataset, `spec_cutoff`, `b`) combination, and not one folder
+covering multiple `spec_cutoff`/`b` values at once.
+
+### Paired (with sensitivity data), multiple `perc_cutoff` values on each side
+
+The same drug's 3 doses, paired with that cell line's (`NUDUL1`) real
+sensitivity profile -- one sensitivity profile, several kinase-activity
+conditions from the same cell line. Passing raw `sens` data (not
+pre-filtered) plus `sens_perc_cutoff` switches `run_network_grid()` to build
+paired (kinase + sensitivity) networks instead of kinase-only, filtering
+that one sensitivity profile per `sens_perc_cutoff` value and reusing each
+filtered version across every condition. `perc_cutoff` (kinase side) and
+`sens_perc_cutoff` (sensitivity side) grid independently of each other --
+there's no `spec_cutoff`-equivalent for sensitivity data, since specificity
+is a kinase-activity-only concept:
+
+```{r batch-paired-clean}
+uka_doses <- read.csv("example_data/cdk_inhibitor_PHA-793887_all_doses.csv")
+unique(uka_doses$Sgroup_contrast)
+
+sens <- read.csv("example_data/sensitivity_example.csv")
+sens_nudul <- sens[sens$cell_line == "NUDUL1", ]
+```
+
+```{r batch-paired-build}
+paired_dir <- tempfile()
+dir.create(paired_dir)
+
+paired_results <- run_network_grid(
+  uka_doses, condition_col = "Sgroup_contrast",
+  spec_cutoff = 0.5, perc_cutoff = 0.5, b = 10,
+  sens = sens_nudul, sens_perc_cutoff = c(0.6, 0.7),
+  ppi_network = ppi_networkv12_502_kins, respath = paired_dir, write = TRUE, n = 2
+)
+
+for (item in paired_results) {
+  cat(item$meta$condition, "| sens_perc_cutoff =", item$meta$sens_perc_cutoff, ": ",
+    nrow(item$result$nodes), " nodes, ", nrow(item$result$edges), " edges\n",
+    sep = ""
+  )
+}
+
+list.files(paired_dir, recursive = TRUE)
+```
+
+The folder additionally nests under a `uka`-named subfolder (since output
+there depends on both `uka` and `sens`), with one subfolder per distinct
+`sens_perc_cutoff` value inside it (2 here, since `perc_cutoff`/`spec_cutoff`
+are each a single value in this example).
+
+### Safety guard for large grids
+
+`run_network_grid()` refuses to build more than `max_tasks` (default 500)
+networks without an explicit override -- a check against an accidentally
+huge overnight run, not a time estimate:
+
+```{r max-tasks, error = TRUE}
+run_network_grid(
+  uka_doses, condition_col = "Sgroup_contrast",
+  spec_cutoff = seq(0.1, 0.9, by = 0.1), perc_cutoff = 0.7, b = 10,
+  respath = paired_dir, write = FALSE, max_tasks = 5
+)
+```
+
+### Parallel vs. sequential execution
+
+By default, no `future` plan is set, so `run_network_grid()` runs
+**sequentially** -- one build at a time, still correct, just not parallel.
+To actually parallelize across the whole grid, set a plan **once**, before
+any `run_network_grid()` call in the session (not per call -- worker
+startup, including loading `PCSF`'s compiled code in each worker, has real
+cost, so it's not worth repeating):
+
+```{r batch-plan, eval = FALSE}
+future::plan(future::multisession, workers = 4) # local parallel workers
+```
+
+Every `run_network_grid()` call for the rest of the session now runs in
+parallel automatically -- nothing else about the call changes. To go back
+to sequential:
+
+```{r batch-plan-reset, eval = FALSE}
+future::plan(future::sequential)
+```
+
+Persisted output is the `nodes`/`edges`/`wc_df` CSVs written above, plus
+`params.csv` -- that's what `networkPlot` (enrichment + visualization) reads
+back in later, not a saved copy of the `igraph` object itself.
