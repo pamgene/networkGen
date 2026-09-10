@@ -39,12 +39,15 @@ superseded-note on `docs/adr/0001` are updated to match.
 
 | Function | Does | Pure? |
 |---|---|---|
-| `enrich_network(network, nodes, databases = "Reactome_Pathways_2024", min_hits = 2, ontology_filter = TRUE)` | one Enrichr call on the network's kinase nodes → filtered, Reactome-hierarchy-collapsed pathway table; joins a `pathway` column onto `nodes` | returns data frames, no writes |
-| `reconcile_pathways(pathway_tables)` | re-pick one pathway per gene-set across several comparisons so heatmaps line up | pure |
+| `enrich_network(nodes, databases = "Reactome_Pathways_2024", min_hits = 2, postprocess = reactome_postprocess(reactome_refs()), out_dir = NULL, refresh = FALSE)` | one `enrichR` call on every network node except `Hidden` (Steiner connectors) → filtered, post-processed pathway table + a `pathway` column joined onto `nodes`; if `out_dir` given, writes `pathways_*_all.csv` / `pathways_*.csv` and, unless `refresh`, resumes from an existing `pathways_*.csv` | data frames; writes only when `out_dir` given |
+| `reconcile_pathways(all_tables)` | given several comparisons' `_all` candidate tables, re-pick one pathway per gene-set favouring pathways recurring across the most comparisons; returns each comparison's reconciled short table | pure |
 | `plot_network(nodes, edges, title, clusters = NULL, colour_by = "pathway", theme = networkplot_theme())` | build the visNetwork htmlwidget | pure |
 | `save_network_html(widget, path)` | the `saveWidget` → `visSave` fallback dance, one place | write |
-| `plot_pathway_heatmaps(pathway_tables, nodes_tables, out_dir, min_kinases = 3)` | per-comparison + combined kinase×pathway `ComplexHeatmap` PNGs | write |
+| `plot_pathway_heatmaps(comparisons, out_dir, min_kinases = 3)` | core: `comparisons` = named list of `list(pathways = df, nodes = df)`; writes per-comparison + common-to-all + unique/pairwise-overlap `ComplexHeatmap` PNGs | write |
+| `plot_pathway_heatmaps_dir(res_dir, spec_cutoff, ...)` | thin wrapper: discovers `pathways_*.csv` / `nodes_*.csv` in a result folder and calls `plot_pathway_heatmaps()` | write |
 | `networkplot_theme(...)` | config object holding every styling knob, defaults = today's look | — |
+| `reactome_refs(pathways_txt = <bundled>, relations_txt = <bundled>)` | load the Reactome reference tables (defaults to the bundled snapshot) | read |
+| `download_reactome_refs(dest)` | fetch the current Reactome release to `dest`; run manually to refresh, never automatic | write + network |
 
 `make_network_and_stats*()` do **not** move in whole — they are monolith
 orchestration (build + enrich + plot + disk I/O). The monolith keeps a thin
@@ -83,9 +86,10 @@ root); it cannot vary per edge. Two real per-edge quantities:
 Two ways `do_network_enrichment()` can enrich a network:
 
 - **Simple path** (`per_cluster = FALSE`, the default — and the only one any
-  caller actually uses): take the network's kinase nodes as *one* gene
-  list, make *one* Enrichr call, keep pathways with more than `min_n_hits`
-  overlapping genes.
+  caller actually uses): take the network's nodes as *one* gene list, make
+  *one* Enrichr call, keep pathways with enough overlapping genes. (In
+  `networkPlot` this becomes: every node except `Hidden`; `>= min_hits`
+  overlap — see §3.4.)
 
 - **Per-cluster path** (`per_cluster = TRUE`):
   1. `igraph::cluster_edge_betweenness(network)` splits the network into
@@ -265,35 +269,49 @@ Caveats:
 - Both metrics coexist — `weight` stays in the data frame alongside `cost`,
   and `theme$edge_width$column` picks which drives boldness.
 
-### 3.4 Pluggable pathway database
+### 3.4 Enrichment — resolved shape
 
-Today only **Reactome** is wired end to end. Enrichr itself is already
-database-agnostic — `enrich_network(databases = ...)` is passed straight
-through to the Enrichr call, and Enrichr ships many built-in libraries
-(KEGG, WikiPathways, GO, MSigDB Hallmark, …). What is Reactome-specific is
-the **post-processing**: `add_reactome_hierarchy()` collapses redundant
-terms by shared Reactome parent and drops top-level terms, using the
-`ReactomePathways.txt` / `ReactomePathwaysRelation.txt` tables.
+**Enrichr client.** Use the **`enrichR` CRAN package** (`enrichr()`,
+`listEnrichrDbs()`), not the hand-rolled `call_enr_simple()` HTTP client.
+Point it at `maayanlab.cloud/Enrichr` (the legacy `amp.pharm.mssm.edu` host
+the old code used is deprecated).
 
-Design so the reference database can be swapped:
+**Which nodes.** Enrich **every node in the network except `type ==
+"Hidden"`** (the Steiner connectors PCSF added, which carry no input
+identity). This is a deliberate change from the current code's
+kinase-types-only filter (`Kinase`, `Kinase-Peptide`, `Protein-Kinase`,
+…) — kept explicit in the docs and a verification diff, not silent.
 
-- `enrich_network(network, nodes, databases = "Reactome_Pathways_2024",
-  postprocess = reactome_postprocess(pathways_txt, relations_txt),
-  min_hits = 2, ...)`.
-- `postprocess` is a function `(pathway_df) -> pathway_df` — one step that
-  takes the raw Enrichr hits and returns the filtered/collapsed table.
-  `reactome_postprocess()` is the built-in that does hierarchy collapsing +
-  shallow-term drop + WikiPathways-ontology filtering; passing
-  `postprocess = NULL` (or a lighter generic filter) is what a KEGG /
-  Hallmark run uses until a database-specific step exists for it.
-- Reference tables are arguments to `reactome_postprocess()`, never
-  package-bundled or global.
-- **Next step (not v1):** try other Enrichr libraries by passing
-  `databases = c("KEGG_2021_Human", ...)` and building matching
-  `*_postprocess()` steps; the interface above is what makes that additive.
-- Open question for the design pass: keep the current hand-rolled Enrichr
-  HTTP client (`call_enr_simple()`), or move to the `enrichR` CRAN package
-  (maintained wrapper, same service). See §5.
+**Filter.** Keep a pathway when its overlap is `>= min_hits` (the current
+simple path uses strictly `>`; `>=` is what a "minimum" should mean).
+
+**Caching.** `refresh = FALSE` (default): if `out_dir` already holds this
+comparison's `pathways_*.csv`, read it and skip the Enrichr call.
+`refresh = TRUE` forces a fresh call. No implicit file-exists magic beyond
+that one documented arg.
+
+**Pluggable reference database.** Only **Reactome** is wired end to end
+today. `enrichR` is already database-agnostic — `databases` is passed
+straight through, and Enrichr ships many libraries (KEGG, WikiPathways, GO,
+MSigDB Hallmark, …). What is Reactome-specific is the **post-processing**:
+hierarchy collapsing by shared parent + top-level-term drop
+(`add_reactome_hierarchy()`), using the `ReactomePathways.txt` /
+`ReactomePathwaysRelation.txt` tables. So:
+
+- `postprocess` is a function `(pathway_df) -> pathway_df`.
+  `reactome_postprocess(refs)` is the built-in (hierarchy collapse +
+  shallow-term drop + WikiPathways-ontology filter when WikiPathways is
+  among `databases`). `postprocess = NULL` skips it — what a KEGG /
+  Hallmark run uses until a database-specific step exists.
+- Reference tables come from `reactome_refs()`, which defaults to a
+  **bundled snapshot** shipped as package data (works out of the box, fast).
+  `enrich_network(postprocess = reactome_postprocess(reactome_refs(my_txt,
+  my_rel)))` overrides. `download_reactome_refs(dest)` fetches the current
+  release — run manually when Reactome cuts a new version (~quarterly),
+  never automatically.
+- **Next step (not v1):** exercise other Enrichr libraries via `databases =`
+  and matching `*_postprocess()` steps; the interface above is what makes
+  that additive.
 
 ### 3.5 Input / output data
 
@@ -305,12 +323,30 @@ Design so the reference database can be swapped:
   interaction cost, lower = stronger).
 - `wc_df` (optional): `id`, `cluster`.
 
-**Reference tables** for enrichment (passed in, not bundled): Reactome
-`ReactomePathways.txt`, `ReactomePathwaysRelation.txt`.
+**Reference tables** for enrichment: `reactome_refs()` — a bundled Reactome
+snapshot (`ReactomePathways.txt`, `ReactomePathwaysRelation.txt`) shipped as
+package data; overridable, refreshable via `download_reactome_refs()`.
+
+**Two-pass pathway selection** (why `reconcile_pathways()` exists):
+
+1. Per comparison, `enrich_network()` writes `pathways_<cond>_spec<cutoff>_all.csv`
+   (every surviving candidate) **and** a *provisional*
+   `pathways_<cond>_spec<cutoff>.csv` — one pathway per gene-set, picked by
+   the hierarchy tiebreak alone, **no cross-comparison awareness**.
+2. Once every comparison for a `spec_cutoff` is enriched,
+   `reconcile_pathways()` reads all the `_all.csv` files, counts how many
+   comparisons each candidate pathway appears in, and **overwrites** every
+   comparison's short `pathways_<cond>_spec<cutoff>.csv` with a pick that
+   favours pathways recurring across the most comparisons (tie → hierarchy
+   depth → combined score → name). This is what makes the same biology line
+   up under the same pathway label across comparisons.
+3. `plot_pathway_heatmaps()` then just reads the reconciled short tables —
+   it does **no** selection of its own.
 
 **Output**: `pathways_<cond>_spec<cutoff>.csv` (+ `_all.csv`),
 `nodes_<cond>_spec<cutoff>_with_pathways.csv`,
-`<cond>_spec<cutoff>.html`, and the kinase×pathway heatmap PNGs.
+`<cond>_spec<cutoff>.html`, and the kinase×pathway heatmap PNGs (per
+comparison, common-to-all, and unique/pairwise-overlap).
 
 ## 4. Code reference
 
@@ -320,48 +356,41 @@ Monolith source → destination:
 |---|---|---|
 | `network_enrichment_and_vis.R::visualize_network_pg()` | `networkPlot::plot_network()` | styling → `networkplot_theme()` |
 | `kinograte_PG.R` HTML-save tryCatch block | `networkPlot::save_network_html()` | |
-| `network_enrichment_and_vis.R::do_network_enrichment()` (simple path) | `networkPlot::enrich_network()` | drop the `per_cluster` arg |
-| `network_enrichment_and_vis.R::call_enr_simple()` | `networkPlot` (internal) | |
-| `network_enrichment_and_vis.R::filter_wps_by_ontology()` + SPARQL | `networkPlot` (internal) | **rewire** into `enrich_network()` when WikiPathways is requested |
-| `network_enrichment_and_vis.R::add_reactome_hierarchy()`, `id_of()`, `get_ancestors()` | `networkPlot` (internal, behind `reactome_postprocess()`) | keep the deliberate `hierarchy_n > 1` drop as an explicit `return()` (§3.1) |
-| `network_enrichment_and_vis.R::reconcile_pathway_selection()` | `networkPlot::reconcile_pathways()` | |
-| `plotting_functions.R::plot_kinase_pathway_heatmaps()` + `create_combined_heatmap()` / `create_pairwise_combined_heatmaps()` / `create_unique_heatmap_comparison()` (lines ~1009–1655) | `networkPlot::plot_pathway_heatmaps()` + internals | `create_union_combined_heatmap()` is already dead (call site commented) — drop |
+| `network_enrichment_and_vis.R::do_network_enrichment()` (simple path) | `networkPlot::enrich_network()` | drop `per_cluster`; enrich all-but-`Hidden` nodes; `>= min_hits`; `refresh` arg |
+| `network_enrichment_and_vis.R::call_enr_simple()` | **replaced** by the `enrichR` package | |
+| `network_enrichment_and_vis.R::filter_wps_by_ontology()` + SPARQL | `networkPlot` (internal, inside `reactome_postprocess()`) | called when `WikiPathways_2024_Human` is among `databases` |
+| `network_enrichment_and_vis.R::add_reactome_hierarchy()`, `id_of()`, `get_ancestors()` | `networkPlot` (internal, inside `reactome_postprocess()`) | keep the deliberate `hierarchy_n > 1` drop as an explicit `return()` (§3.1) |
+| `network_enrichment_and_vis.R::reconcile_pathway_selection()` | `networkPlot::reconcile_pathways()` | folder-reading split into a `_dir()` wrapper; core takes the `_all` tables |
+| `plotting_functions.R::plot_kinase_pathway_heatmaps()` + `create_combined_heatmap()` / `create_pairwise_combined_heatmaps()` / `create_unique_heatmap_comparison()` (lines ~1009–1655) | `networkPlot::plot_pathway_heatmaps()` (core, takes dfs) + `plot_pathway_heatmaps_dir()` (discovery wrapper) + internals | `create_union_combined_heatmap()` is already dead (call site commented) — drop |
 | `network_enrichment_and_vis.R`: `network_enrichment_pg`, `enrichment_analysis_pg`, `call_enr_pg`, `reactome_pw_hierarchy_vis`, tail comment block | **delete from monolith** | §3.1 |
 | `kinograte_PG.R::augment_by_threshold_steps()` | **delete from monolith** | §3.1 |
 | `plotting_functions.R` lines ~10–1008 (MOFA `plot_var_explained` / `plot_factors_pg` / `.set_*`; PCA `plot_pca*`; pathway tilemaps `make_pathway_tilemaps` / `plot_pathway_tilemap` / `plot_heatmap`; `plot_rna_pep_hist`) | **neither** | unrelated leftovers from another project; leave in monolith |
 
-## 5. Open questions — resolve before implementation
+## 5. Resolved design decisions
 
-1. **`enrich_network()` API shape.** Take loose `nodes`/`edges` data frames
-   only, or also a bare `networkGen` result object via an S3 method? (Same
-   question for `plot_network()`.)
-2. **Enrichr client.** Keep the hand-rolled HTTP client (`call_enr_simple()`,
-   POST `addList` + GET `export`), or switch to the `enrichR` CRAN package
-   (maintained wrapper on the same service, gives `listEnrichrDbs()` etc.)?
-   Also: the current URLs are the legacy `amp.pharm.mssm.edu` host — move to
-   `maayanlab.cloud/Enrichr` regardless.
-3. **Which nodes are enriched.** The live path sends only the *kinase*-typed
-   nodes to Enrichr (Kinase, Kinase-Peptide, Protein-Kinase, …). The user's
-   intent is "enrichment on **all** nodes" — confirm that means every node
-   in the network regardless of type (including Steiner/Hidden connectors),
-   and change the gene-list selection accordingly.
-4. **Caching / resume.** `enrich_network()` currently skips the Enrichr call
-   and re-reads `pathways_*.csv` if the file already exists. Keep that
-   implicit resume, or make it an explicit `refresh = FALSE` arg?
-5. **`min_hits` comparison.** Simple path keeps pathways with
-   `n_hits > min_n_hits` (strictly greater); per-cluster used `>=`. Pick one
-   — `>=` reads more naturally for a "minimum".
-6. **Heatmap scope.** `plot_pathway_heatmaps()` today reads a whole result
-   *folder* of `pathways_*.csv` / `nodes_*.csv`. In the package, should it
-   take an explicit list of `(pathway_df, nodes_df, label)` triples instead,
-   so it has no filesystem-layout knowledge?
-7. **Legend construction.** Rebuild the `visLegend addNodes` frame from
-   `theme` (shapes + colour stops + the edge-width note) — confirm the
-   pathway multi-select (`visOptions(selectedBy = "pathway")`) still works
-   after the theme refactor.
-8. **Bundled vs. supplied reference tables.** `ReactomePathways.txt` /
-   `ReactomePathwaysRelation.txt` — always caller-supplied (like `ppi_network`
-   in `networkGen`), or shipped as package data with a refresh helper?
+1. **API shape.** `plot_network()` / `enrich_network()` take loose data
+   frames only (`nodes`, `edges`). No S3 method on `networkGen_result` —
+   the caller unpacks `res$nodes` / `res$edges` in one line; nothing varies
+   across that seam.
+2. **Enrichr client.** The `enrichR` CRAN package, `maayanlab.cloud`
+   endpoint. `call_enr_simple()` is dropped.
+3. **Nodes enriched.** Every node except `type == "Hidden"` (Steiner
+   connectors). Deliberate change from the current kinase-types-only
+   filter; documented + covered by a verification diff.
+4. **Caching.** Explicit `refresh = FALSE` arg; default resumes from an
+   existing `pathways_*.csv` in `out_dir`.
+5. **Filter.** Keep pathways with overlap `>= min_hits`.
+6. **Heatmaps.** `plot_pathway_heatmaps()` core takes a named list of
+   `list(pathways = df, nodes = df)`; `plot_pathway_heatmaps_dir()` is the
+   folder-discovery wrapper. Same output set (per-comparison, common-to-all,
+   unique/pairwise-overlap). The two-pass provisional→`reconcile_pathways()`
+   selection (§3.5) is unchanged in behaviour.
+7. **Legend.** Rebuilt from `theme` (shapes + colour stops + edge-width
+   note); pathway multi-select (`visOptions(selectedBy = "pathway")`)
+   preserved — a build-time check, not a design fork.
+8. **Reference tables.** Bundled Reactome snapshot as package data
+   (`reactome_refs()` default), `reactome_refs(path, path)` override,
+   `download_reactome_refs(dest)` manual refresh.
 
 ## 6. Vignette
 
@@ -372,16 +401,18 @@ explains PCSF. Sections:
 1. **Inputs** — a `networkGen` result (`nodes`/`edges`), and the Reactome
    reference tables for enrichment.
 2. **Enrichment** — one `enrich_network()` call. State plainly: it runs
-   Enrichr on **all nodes of the network** and returns a pathway table plus
-   a `pathway` column joined onto `nodes`. **Currently only Reactome is
-   supported**, but the reference database is a swap point: `databases` goes
-   straight to Enrichr (which has many built-in libraries — KEGG,
-   WikiPathways, GO, …) and the Reactome-specific hierarchy collapsing is a
-   pluggable `postprocess` step. Note as a next step: experiment with the
-   other Enrichr libraries.
+   Enrichr (via the `enrichR` package) on **every node of the network
+   except the Steiner connectors** (`type == "Hidden"`) and returns a
+   pathway table plus a `pathway` column joined onto `nodes`. **Currently
+   only Reactome is supported**, but the reference database is a swap point:
+   `databases` goes straight to Enrichr (which has many built-in libraries —
+   KEGG, WikiPathways, GO, …) and the Reactome-specific hierarchy collapsing
+   is a pluggable `postprocess` step. Note as a next step: experiment with
+   the other Enrichr libraries.
 3. **Reading the pathway output** — what the pathway table columns mean
-   (pathway, overlapping genes, hit count, adjusted p, combined score), and
-   the kinase×pathway heatmap.
+   (pathway, overlapping genes, hit count, adjusted p, combined score); the
+   two-pass selection (provisional per comparison, then reconciled across
+   comparisons so labels line up); and the kinase×pathway heatmap.
 4. **The interactive HTML** — `plot_network()` → `save_network_html()`.
    Walk the tunable HTML features: node shape per node type, the
    LogFC diverging colour scale, high-degree node highlighting, edge colour
@@ -399,9 +430,13 @@ explains PCSF. Sections:
   networkplot_theme())`; diff `widget$x$nodes` / `widget$x$edges` — must be
   identical.
 - **Enrichment parity**: `enrich_network()` on a fixture network vs. the
-  monolith's `do_network_enrichment(per_cluster = FALSE)` → identical
-  `pathways_*.csv` (allowing for the all-nodes vs kinase-nodes gene-list
-  change in open question 3, once decided — record the expected diff).
+  monolith's `do_network_enrichment(per_cluster = FALSE)` — the pathway
+  table matches **except** where the wider gene list (all-but-`Hidden` vs
+  kinase-types-only) legitimately adds pathways; assert the extra rows all
+  trace to non-kinase, non-Hidden nodes.
+- **Node set**: `enrich_network()`'s gene list = `nodes$Protein[nodes$type
+  != "Hidden"]`; a fixture with a `Hidden` node confirms it is excluded and
+  every other type is included.
 - **Theme override**: `networkplot_theme(shapes = c(Kinase = "diamond"))`
   changes only Kinase rows' `shape`.
 - **Edge width**: `edge_width = list(column = "weight")` → a `weight = n`
@@ -440,3 +475,15 @@ explains PCSF. Sections:
 - **Moving `make_network_and_stats*()` in whole.** They mix build, enrich,
   plot, and disk I/O; `networkPlot` takes the enrich + plot halves, the
   monolith keeps the orchestration as thin package calls.
+- **An S3 method taking a `networkGen_result` directly.** One shape
+  (in-memory result) vs another (reconstructed from CSVs) both reduce to
+  `(nodes, edges)`; the wrapper would be a seam with nothing varying across
+  it. Caller unpacks in one line.
+- **Enriching every node including `Hidden` connectors.** Steiner nodes
+  PCSF invented to bridge terminals carry no input identity; including them
+  adds noise to the gene list. Every *other* type is a real hit worth
+  enriching, so the rule is all-but-`Hidden`, not kinase-only and not
+  literally-all.
+- **Keeping the hand-rolled Enrichr HTTP client.** `enrichR` is a
+  maintained CRAN wrapper on the same service with `listEnrichrDbs()` —
+  strictly better for the "try other libraries" goal.
