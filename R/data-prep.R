@@ -73,13 +73,14 @@ overlap_uka_sens <- function(uka, sens) {
 #' Clean a raw Tercen-exported UKA table into kinograte's expected shape
 #'
 #' @param uka Raw UKA data frame, Tercen-style dotted column names.
-#' @param cs If `TRUE`, use the per-comparison "Specificity Score"/"Kinase
-#'   Statistic" columns; if `FALSE` (default), use the "Mean"/"Median"
-#'   variants.
+#' @param cs `TRUE` to use the per-comparison "Specificity Score"/"Kinase
+#'   Statistic" columns (csUKA), `FALSE` to use the "Mean"/"Median" aggregate
+#'   variants. `NULL` (default) auto-detects via [detect_csuka()].
 #'
 #' @return Data frame with columns `Sgroup_contrast`, `uniprotname`, `LogFC`, `fscore`.
 #' @export
-clean_uka_to_kinograte <- function(uka, cs = FALSE) {
+clean_uka_to_kinograte <- function(uka, cs = NULL) {
+  if (is.null(cs)) cs <- detect_csuka(uka)
   finalscore_col <- if (cs) "Specificity Score" else "Mean Specificity Score"
   stat_col <- if (cs) "Kinase Statistic" else "Median Kinase Statistic"
 
@@ -103,12 +104,13 @@ clean_uka_to_kinograte <- function(uka, cs = FALSE) {
 #' @param control Name of the control condition as it appears in `contrast`.
 #' @param spec_cutoff Minimum specificity-score to keep a row. Default 0.
 #' @param del_cell Unused, kept for call-site compatibility.
-#' @param cs If `TRUE`, use the per-comparison specificity columns; if
-#'   `FALSE` (default), use the mean/median variants.
+#' @param cs `TRUE`/`FALSE` to force per-comparison (csUKA) vs. mean/median
+#'   columns; `NULL` (default) auto-detects via [detect_csuka()].
 #'
 #' @return Data frame with columns `cell_line`, `uniprotname`, `LogFC`, `fscore`.
 #' @export
-clean_uka_to_kinograte1 <- function(uka, control, spec_cutoff = 0, del_cell = NULL, cs = FALSE) {
+clean_uka_to_kinograte1 <- function(uka, control, spec_cutoff = 0, del_cell = NULL, cs = NULL) {
+  if (is.null(cs)) cs <- detect_csuka(uka)
   finalscore_col <- if (cs) "Specificity Score" else "Mean Specificity Score"
   stat_col <- if (cs) "Kinase Statistic" else "Median Kinase Statistic"
 
@@ -191,4 +193,34 @@ clean_tercen_columns <- function(df) {
   split <- stringr::str_split(cols, pattern = "\\.")
   colnames(df) <- sapply(split, utils::tail, 1)
   df
+}
+
+#' Detect whether a raw UKA export is a csUKA (per-comparison) export
+#'
+#' A regular UKA export aggregates its metric columns across comparisons and
+#' names them accordingly -- `Mean Specificity Score`, `Median Kinase
+#' Statistic`, `Mean Significance Score`, `Median Final score`. A csUKA
+#' (per-comparison) export carries one value per comparison and names the
+#' same columns without the `Mean`/`Median` prefix -- `Specificity Score`,
+#' `Kinase Statistic`, etc. The `clean_uka_to_kinograte*()` functions read
+#' different columns for each; this picks which based on what's present, so
+#' callers don't have to pass a `cs` flag by hand.
+#'
+#' @param uka A raw UKA data frame (Tercen-style dotted column names are
+#'   fine -- only the last dot-segment is inspected, as [clean_tercen_columns()]
+#'   would produce).
+#'
+#' @return `TRUE` if the columns look like a csUKA export (a bare
+#'   `Specificity Score` present and no `Mean Specificity Score`), `FALSE`
+#'   otherwise -- including when neither is present, so a malformed input
+#'   fails later at the column-selection step with a clearer message rather
+#'   than here.
+#' @export
+detect_csuka <- function(uka) {
+  cols <- colnames(uka)
+  if (is.null(cols)) {
+    return(FALSE)
+  }
+  bare <- vapply(strsplit(cols, ".", fixed = TRUE), function(x) x[length(x)], character(1))
+  "Specificity Score" %in% bare && !("Mean Specificity Score" %in% bare)
 }

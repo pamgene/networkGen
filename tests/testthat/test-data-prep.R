@@ -45,3 +45,29 @@ test_that("clean_uka_to_kinograte selects and renames the mean/median columns", 
   expect_equal(res$LogFC, 1.5)
   expect_equal(res$fscore, 2.0)
 })
+
+test_that("detect_csuka distinguishes csUKA (bare column names) from regular UKA (Mean/Median)", {
+  regular <- data.frame(
+    `x.Median Kinase Statistic` = 1, `x.Mean Specificity Score` = 2, check.names = FALSE
+  )
+  cs <- data.frame(
+    `x.Kinase Statistic` = 1, `x.Specificity Score` = 2, check.names = FALSE
+  )
+  expect_false(detect_csuka(regular))
+  expect_true(detect_csuka(cs))
+  # neither present -> FALSE (fails later at column selection with a clearer error)
+  expect_false(detect_csuka(data.frame(a = 1)))
+  expect_false(detect_csuka("not a data frame"))
+})
+
+test_that("clean_uka_to_kinograte auto-detects cs from the columns when cs is NULL (the default)", {
+  cs_uka <- data.frame(
+    `x.Sgroup_contrast` = "A_vs_B", `x.Kinase Name` = "KIN1",
+    `x.Kinase Statistic` = 1.5, `x.Specificity Score` = 2.0,
+    check.names = FALSE
+  )
+  # no cs argument at all -> auto-detected as csUKA, reads the bare columns
+  res <- clean_uka_to_kinograte(cs_uka)
+  expect_equal(res$LogFC, 1.5)
+  expect_equal(res$fscore, 2.0)
+})

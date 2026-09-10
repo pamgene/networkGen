@@ -9,7 +9,7 @@ clean_uka_to_kinograte1(
   control,
   spec_cutoff = 0,
   del_cell = NULL,
-  cs = FALSE
+  cs = NULL
 )
 }
 \arguments{
@@ -21,8 +21,8 @@ clean_uka_to_kinograte1(
 
 \item{del_cell}{Unused, kept for call-site compatibility.}
 
-\item{cs}{If \code{TRUE}, use the per-comparison specificity columns; if
-\code{FALSE} (default), use the mean/median variants.}
+\item{cs}{\code{TRUE}/\code{FALSE} to force per-comparison (csUKA) vs. mean/median
+columns; \code{NULL} (default) auto-detects via \code{\link[=detect_csuka]{detect_csuka()}}.}
 }
 \value{
 Data frame with columns \code{cell_line}, \code{uniprotname}, \code{LogFC}, \code{fscore}.

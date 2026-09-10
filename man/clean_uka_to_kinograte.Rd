@@ -4,14 +4,14 @@
 \alias{clean_uka_to_kinograte}
 \title{Clean a raw Tercen-exported UKA table into kinograte's expected shape}
 \usage{
-clean_uka_to_kinograte(uka, cs = FALSE)
+clean_uka_to_kinograte(uka, cs = NULL)
 }
 \arguments{
 \item{uka}{Raw UKA data frame, Tercen-style dotted column names.}
 
-\item{cs}{If \code{TRUE}, use the per-comparison "Specificity Score"/"Kinase
-Statistic" columns; if \code{FALSE} (default), use the "Mean"/"Median"
-variants.}
+\item{cs}{\code{TRUE} to use the per-comparison "Specificity Score"/"Kinase
+Statistic" columns (csUKA), \code{FALSE} to use the "Mean"/"Median" aggregate
+variants. \code{NULL} (default) auto-detects via \code{\link[=detect_csuka]{detect_csuka()}}.}
 }
 \value{
 Data frame with columns \code{Sgroup_contrast}, \code{uniprotname}, \code{LogFC}, \code{fscore}.
