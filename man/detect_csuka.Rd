@@ -23,7 +23,7 @@ A regular UKA export aggregates its metric columns across comparisons and
 names them accordingly -- \verb{Mean Specificity Score}, \verb{Median Kinase Statistic}, \verb{Mean Significance Score}, \verb{Median Final score}. A csUKA
 (per-comparison) export carries one value per comparison and names the
 same columns without the \code{Mean}/\code{Median} prefix -- \verb{Specificity Score},
-\verb{Kinase Statistic}, etc. The \verb{clean_uka_to_kinograte*()} functions read
-different columns for each; this picks which based on what's present, so
-callers don't have to pass a \code{cs} flag by hand.
+\verb{Kinase Statistic}, etc. \code{\link[=prep_uka]{prep_uka()}} reads different columns for each;
+this picks which based on what's present, so callers don't have to pass
+a \code{cs} flag by hand.
 }

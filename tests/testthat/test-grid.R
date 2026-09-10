@@ -7,7 +7,7 @@ test_that("build_network_grid crosses condition x spec_cutoff x perc_cutoff", {
   )
 
   grid <- build_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast",
+    cleaned_uka, comparison_col = "Sgroup_contrast",
     spec_cutoff = c(0, 0.5), perc_cutoff = 0, b = 1
   )
 
@@ -30,11 +30,11 @@ test_that("build_network_grid splits by dataset when a dataset column is present
   )
 
   # clean_fn here is just a pass-through that drops the dataset column,
-  # mirroring how a real clean_uka_to_kinograte*() select() would drop it
+  # mirroring how a real prep_uka() select() would drop it
   drop_dataset <- function(x) x[, setdiff(colnames(x), "dataset"), drop = FALSE]
 
   grid <- build_network_grid(
-    raw, clean_fn = drop_dataset, condition_col = "Sgroup_contrast",
+    raw, clean_fn = drop_dataset, comparison_col = "Sgroup_contrast",
     spec_cutoff = 0, perc_cutoff = 0, b = 1
   )
 
@@ -60,7 +60,7 @@ test_that("run_network_grid builds one task per grid cell, kinase-only when sens
   )
 
   out <- run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
     ppi_network = data.frame(head = "A", tail = "B", cost = 0.1), write = FALSE
   )
 
@@ -88,7 +88,7 @@ test_that("run_network_grid reuses one sens profile across every condition, per 
   raw_sens <- data.frame(uniprotname = paste0("T", 1:5), LogFC = c(-5, -4, -3, -2, -1))
 
   out <- run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
     sens = raw_sens, sens_perc_cutoff = 0.7,
     ppi_network = data.frame(head = "A", tail = "B", cost = 0.1), write = FALSE
   )
@@ -117,7 +117,7 @@ test_that("run_network_grid grids sens_perc_cutoff independently of every uka-si
   raw_sens <- data.frame(uniprotname = paste0("T", 1:5), LogFC = c(-5, -4, -3, -2, -1))
 
   out <- run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
     sens = raw_sens, sens_perc_cutoff = c(0.7, 0.9),
     ppi_network = data.frame(head = "A", tail = "B", cost = 0.1), write = FALSE
   )
@@ -157,14 +157,14 @@ test_that("run_network_grid passes a single-network grid's ppi_network once to t
   )
 
   run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
     ppi_network = ppi_one, write = FALSE
   )
   expect_false(any(capture$per_task_ppi))          # not embedded in each task
   expect_identical(capture$shared, ppi_one)        # passed once as the shared network
 
   run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
     ppi_network = list(one = ppi_one, two = ppi_two), write = FALSE
   )
   expect_true(all(capture$per_task_ppi))           # genuine multi-network grid: kept per-task
@@ -179,7 +179,7 @@ test_that("run_network_grid requires sens_perc_cutoff when sens is given", {
 
   expect_error(
     run_network_grid(
-      cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+      cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
       sens = raw_sens, ppi_network = data.frame(head = "A", tail = "B", cost = 0.1), write = FALSE
     ),
     "sens_perc_cutoff"
@@ -194,7 +194,7 @@ test_that("run_network_grid refuses to proceed when the grid exceeds max_tasks",
 
   expect_error(
     run_network_grid(
-      cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+      cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
       ppi_network = data.frame(head = "A", tail = "B", cost = 0.1), write = FALSE, max_tasks = 3
     ),
     "max_tasks"
@@ -219,7 +219,7 @@ test_that("run_network_grid works end-to-end with real PCSF, one folder per (spe
   dir.create(respath)
 
   out <- run_network_grid(
-    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 10,
+    cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 10,
     ppi_network = local_path_ppi, respath = respath, write = TRUE
   )
 

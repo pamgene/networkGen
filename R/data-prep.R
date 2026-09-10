@@ -11,7 +11,7 @@
 #' @param perc_cutoff Minimum percentile rank (0-1) to keep a row.
 #' @param cs Unused here, kept for call-site compatibility with the historic
 #'   `uka_top()` signature (specificity-score column selection happens
-#'   upstream, in [clean_uka_to_kinograte()]).
+#'   upstream, in [prep_uka()]).
 #'
 #' @return Data frame with columns `name`, `prize`, `type` ("Kinase"), `LogFC`.
 #' @export
@@ -70,23 +70,35 @@ overlap_uka_sens <- function(uka, sens) {
   overlap / max(length(sens), 1)
 }
 
-#' Clean a raw Tercen-exported UKA table into kinograte's expected shape
+#' Reshape a raw Tercen-exported UKA table into network-builder input
+#'
+#' Reduces a raw UKA (kinase-activity) export to the four columns the grid
+#' builder and [uka_top()] consume: the comparison-identifying column plus
+#' `uniprotname`, `LogFC` (the kinase statistic), `fscore` (the specificity
+#' score). Passed as the `clean_fn` to [build_network_grid()] /
+#' [run_network_grid()] when the input is raw rather than already reshaped.
 #'
 #' @param uka Raw UKA data frame, Tercen-style dotted column names.
 #' @param cs `TRUE` to use the per-comparison "Specificity Score"/"Kinase
 #'   Statistic" columns (csUKA), `FALSE` to use the "Mean"/"Median" aggregate
 #'   variants. `NULL` (default) auto-detects via [detect_csuka()].
+#' @param comparison_col Name of the raw column identifying each comparison,
+#'   carried through unchanged to the output. Different Tercen exports name
+#'   it differently (`"Sgroup_contrast"`, `"Sample"`, ...). Default
+#'   `"Sgroup_contrast"`. Must match the `comparison_col` passed to
+#'   [build_network_grid()].
 #'
-#' @return Data frame with columns `Sgroup_contrast`, `uniprotname`, `LogFC`, `fscore`.
+#' @return Data frame with columns `<comparison_col>`, `uniprotname`,
+#'   `LogFC`, `fscore`.
 #' @export
-clean_uka_to_kinograte <- function(uka, cs = NULL) {
+prep_uka <- function(uka, cs = NULL, comparison_col = "Sgroup_contrast") {
   if (is.null(cs)) cs <- detect_csuka(uka)
   finalscore_col <- if (cs) "Specificity Score" else "Mean Specificity Score"
   stat_col <- if (cs) "Kinase Statistic" else "Median Kinase Statistic"
 
   uka %>%
     clean_tercen_columns() %>%
-    dplyr::select("Sgroup_contrast", "Kinase Name", dplyr::all_of(stat_col), dplyr::all_of(finalscore_col)) %>%
+    dplyr::select(dplyr::all_of(comparison_col), "Kinase Name", dplyr::all_of(stat_col), dplyr::all_of(finalscore_col)) %>%
     dplyr::rename(
       "uniprotname" = "Kinase Name", "LogFC" = dplyr::all_of(stat_col),
       "fscore" = dplyr::all_of(finalscore_col)
@@ -94,49 +106,7 @@ clean_uka_to_kinograte <- function(uka, cs = NULL) {
     dplyr::distinct()
 }
 
-#' Clean a raw UKA table into kinograte's expected shape, with a fixed control
-#'
-#' Handles both "X vs control" and "control vs X" contrast naming, flipping
-#' the statistic's sign when control is on the left so `LogFC` always reads
-#' "treatment relative to control."
-#'
-#' @param uka Raw UKA data frame, Tercen-style dotted column names.
-#' @param control Name of the control condition as it appears in `contrast`.
-#' @param spec_cutoff Minimum specificity-score to keep a row. Default 0.
-#' @param del_cell Unused, kept for call-site compatibility.
-#' @param cs `TRUE`/`FALSE` to force per-comparison (csUKA) vs. mean/median
-#'   columns; `NULL` (default) auto-detects via [detect_csuka()].
-#'
-#' @return Data frame with columns `cell_line`, `uniprotname`, `LogFC`, `fscore`.
-#' @export
-clean_uka_to_kinograte1 <- function(uka, control, spec_cutoff = 0, del_cell = NULL, cs = NULL) {
-  if (is.null(cs)) cs <- detect_csuka(uka)
-  finalscore_col <- if (cs) "Specificity Score" else "Mean Specificity Score"
-  stat_col <- if (cs) "Kinase Statistic" else "Median Kinase Statistic"
-
-  uka %>%
-    clean_tercen_columns() %>%
-    dplyr::filter(.data[[finalscore_col]] > spec_cutoff) %>%
-    dplyr::filter(
-      stringr::str_detect(.data$contrast, paste0(" vs ", control)) |
-        stringr::str_detect(.data$contrast, paste0(control, " vs "))
-    ) %>%
-    dplyr::mutate(contrast = gsub(.data$contrast, pattern = "-", replacement = "")) %>%
-    dplyr::mutate(
-      control_left = stringr::str_detect(.data$contrast, paste0("^", control, " vs ")),
-      cell_line = ifelse(.data$control_left,
-        stringr::str_replace(.data$contrast, paste0(control, " vs "), ""),
-        stringr::str_replace(.data$contrast, paste0(" vs ", control), "")
-      ),
-      MKS = ifelse(.data$control_left, -.data[[stat_col]], .data[[stat_col]])
-    ) %>%
-    dplyr::select("cell_line", "Kinase Name", "MKS", dplyr::all_of(finalscore_col)) %>%
-    dplyr::rename("uniprotname" = "Kinase Name", "LogFC" = "MKS", "fscore" = dplyr::all_of(finalscore_col)) %>%
-    dplyr::mutate(cell_line = gsub(.data$cell_line, pattern = "-", replacement = "")) %>%
-    dplyr::distinct()
-}
-
-#' Clean sensitivity data into kinograte's expected shape
+#' Reshape raw sensitivity data into network-builder input
 #'
 #' @param sens Raw sensitivity data frame with columns `TARGET_1`, `cell_line`, `LN_IC50`.
 #' @param control If given, `LogFC` is computed as `LN_IC50 - LN_IC50` of
@@ -149,7 +119,7 @@ clean_uka_to_kinograte1 <- function(uka, control, spec_cutoff = 0, del_cell = NU
 #'
 #' @return Data frame with columns `cell_line`, `uniprotname`, `LogFC`.
 #' @export
-clean_sens_to_kinograte <- function(sens, control, zscore = FALSE, del_cell = NULL) {
+prep_sens <- function(sens, control, zscore = FALSE, del_cell = NULL) {
   sens_filt <- sens %>% dplyr::rename("uniprotname" = "TARGET_1")
 
   if (!is.null(control) && !zscore) {
@@ -202,9 +172,9 @@ clean_tercen_columns <- function(df) {
 #' Statistic`, `Mean Significance Score`, `Median Final score`. A csUKA
 #' (per-comparison) export carries one value per comparison and names the
 #' same columns without the `Mean`/`Median` prefix -- `Specificity Score`,
-#' `Kinase Statistic`, etc. The `clean_uka_to_kinograte*()` functions read
-#' different columns for each; this picks which based on what's present, so
-#' callers don't have to pass a `cs` flag by hand.
+#' `Kinase Statistic`, etc. [prep_uka()] reads different columns for each;
+#' this picks which based on what's present, so callers don't have to pass
+#' a `cs` flag by hand.
 #'
 #' @param uka A raw UKA data frame (Tercen-style dotted column names are
 #'   fine -- only the last dot-segment is inspected, as [clean_tercen_columns()]

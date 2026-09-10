@@ -136,10 +136,10 @@ raw_multidataset <- load_uka_dataset_files(multidataset_paths)
 table(raw_multidataset$dataset, raw_multidataset$kinase_type)
 ```
 
-This is raw (not pre-cleaned) data, so `run_network_grid()` needs a
-`clean_fn` -- `Sgroup_contrast` is the condition column
-`clean_uka_to_kinograte()` produces. `spec_cutoff` **and** `w` as vectors
-grid every dataset's condition against every cutoff x `w` combination --
+This is raw (not pre-reshaped) data, so `run_network_grid()` needs a
+`clean_fn` -- `prep_uka()` carries the `Sgroup_contrast` comparison column
+through. `spec_cutoff` **and** `w` as vectors
+grid every dataset's comparison against every cutoff x `w` combination --
 3 datasets x 2 `spec_cutoff` values x 2 `w` values below, no loop written
 (`perc_cutoff`, `b`, `rank_uka_abs` and `ppi_network` could grid the same
 way; kept at their defaults here so the example stays readable):
@@ -149,7 +149,7 @@ multidataset_dir <- tempfile()
 dir.create(multidataset_dir)
 
 multidataset_results <- run_network_grid(
-  raw_multidataset, clean_fn = clean_uka_to_kinograte, condition_col = "Sgroup_contrast",
+  raw_multidataset, clean_fn = prep_uka, comparison_col = "Sgroup_contrast",
   spec_cutoff = c(1, 1.5), perc_cutoff = 0.5, w = c(2, 4), ppi_network = ppi_networkv12_502_kins,
   respath = multidataset_dir, write = TRUE, n = 2
 )
@@ -196,7 +196,7 @@ paired_dir <- tempfile()
 dir.create(paired_dir)
 
 paired_results <- run_network_grid(
-  uka_doses, condition_col = "Sgroup_contrast",
+  uka_doses, comparison_col = "Sgroup_contrast",
   spec_cutoff = 0.5, perc_cutoff = 0.5,
   sens = sens_nudul, sens_perc_cutoff = c(0.6, 0.7),
   ppi_network = ppi_networkv12_502_kins, respath = paired_dir, write = TRUE, n = 2
@@ -225,7 +225,7 @@ huge overnight run, not a time estimate:
 
 ```{r max-tasks, error = TRUE}
 run_network_grid(
-  uka_doses, condition_col = "Sgroup_contrast",
+  uka_doses, comparison_col = "Sgroup_contrast",
   spec_cutoff = seq(0.1, 0.9, by = 0.1), perc_cutoff = 0.7,
   respath = paired_dir, write = FALSE, max_tasks = 5
 )

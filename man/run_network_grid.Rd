@@ -7,7 +7,7 @@
 run_network_grid(
   raw_uka,
   clean_fn = identity,
-  condition_col,
+  comparison_col,
   spec_cutoff,
   perc_cutoff,
   b = 2,
@@ -31,15 +31,14 @@ before cleaning -- each dataset cleaned and gridded independently. If
 not, treated as a single implicit dataset.}
 
 \item{clean_fn}{Function \code{(raw_uka_subset) -> cleaned} producing a data
-frame with \code{fscore}/\code{uniprotname}/\code{LogFC} and \code{condition_col} columns
-(e.g. \code{networkGen::clean_uka_to_kinograte()}, \code{networkScore}'s
-\code{clean_uka_to_kinograte_kinase()}/\code{clean_uka_to_kinograte_full()} --
-whichever convention the caller's condition-identifying column uses).
-Default \code{identity}: \code{raw_uka} is already cleaned.}
+frame with \code{fscore}/\code{uniprotname}/\code{LogFC} and \code{comparison_col} columns
+(e.g. \code{\link[=prep_uka]{prep_uka()}}, or \code{networkScore::prep_uka_paired()} -- whichever
+convention the caller's comparison-identifying column uses). Default
+\code{identity}: \code{raw_uka} is already reshaped.}
 
-\item{condition_col}{Name of the column identifying each condition in
+\item{comparison_col}{Name of the column identifying each comparison in
 \code{clean_fn}'s output (e.g. \code{"Sgroup_contrast"}, \code{"Sample"}, \code{"cell_line"}
--- differs by which cleaning convention \code{clean_fn} uses).}
+-- differs by which reshaping convention \code{clean_fn} uses).}
 
 \item{spec_cutoff, perc_cutoff, b, w, rank_uka_abs}{Vectors -- every
 combination is gridded, not just paired elementwise. \code{spec_cutoff}/

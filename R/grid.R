@@ -47,14 +47,13 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   before cleaning -- each dataset cleaned and gridded independently. If
 #'   not, treated as a single implicit dataset.
 #' @param clean_fn Function `(raw_uka_subset) -> cleaned` producing a data
-#'   frame with `fscore`/`uniprotname`/`LogFC` and `condition_col` columns
-#'   (e.g. `networkGen::clean_uka_to_kinograte()`, `networkScore`'s
-#'   `clean_uka_to_kinograte_kinase()`/`clean_uka_to_kinograte_full()` --
-#'   whichever convention the caller's condition-identifying column uses).
-#'   Default `identity`: `raw_uka` is already cleaned.
-#' @param condition_col Name of the column identifying each condition in
+#'   frame with `fscore`/`uniprotname`/`LogFC` and `comparison_col` columns
+#'   (e.g. [prep_uka()], or `networkScore::prep_uka_paired()` -- whichever
+#'   convention the caller's comparison-identifying column uses). Default
+#'   `identity`: `raw_uka` is already reshaped.
+#' @param comparison_col Name of the column identifying each comparison in
 #'   `clean_fn`'s output (e.g. `"Sgroup_contrast"`, `"Sample"`, `"cell_line"`
-#'   -- differs by which cleaning convention `clean_fn` uses).
+#'   -- differs by which reshaping convention `clean_fn` uses).
 #' @param spec_cutoff,perc_cutoff,b,w,rank_uka_abs Vectors -- every
 #'   combination is gridded, not just paired elementwise. `spec_cutoff`/
 #'   `perc_cutoff` are passed to [uka_top()] (which also determines
@@ -78,7 +77,7 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   from [uka_top()]), `uka_cell_all` (that condition's full, unfiltered
 #'   rows -- for permutation building).
 #' @export
-build_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
+build_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                                 spec_cutoff, perc_cutoff, b = 2, w = 2, rank_uka_abs = TRUE,
                                 ppi_network = ppi_networkv12, dataset_col = "dataset") {
   ppi_label <- rlang::as_label(rlang::enquo(ppi_network))
@@ -94,14 +93,14 @@ build_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
   cells <- purrr::map(seq_along(datasets), function(i) {
     ds_name <- dataset_names[[i]]
     cleaned <- clean_fn(datasets[[i]])
-    conditions <- unique(cleaned[[condition_col]])
+    conditions <- unique(cleaned[[comparison_col]])
     combos <- tidyr::expand_grid(
       condition = conditions, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff,
       b = b, w = w, rank_uka_abs = rank_uka_abs, ppi_network_name = names(ppi_list)
     )
 
     purrr::pmap(combos, function(condition, spec_cutoff, perc_cutoff, b, w, rank_uka_abs, ppi_network_name) {
-      uka_cell_all <- cleaned[cleaned[[condition_col]] == condition, ]
+      uka_cell_all <- cleaned[cleaned[[comparison_col]] == condition, ]
       uka_filt <- uka_top(uka_cell_all, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, rank_uka_abs = rank_uka_abs)
       list(
         dataset = ds_name, condition = condition, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff,
@@ -222,7 +221,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 #'   `spec_cutoff`, `perc_cutoff`, `b`, `w`, `rank_uka_abs`,
 #'   `ppi_network_name`, and, for the paired path, `sens_perc_cutoff`).
 #' @export
-run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
+run_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                               spec_cutoff, perc_cutoff, b = 2, w = 2, ppi_network = ppi_networkv12,
                               rank_uka_abs = TRUE, dataset_col = "dataset",
                               sens = NULL, sens_perc_cutoff = NULL, sens_balance = TRUE,
@@ -254,7 +253,7 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
   if (paired) base_labels$sens <- sens_label
 
   uka_grid <- build_network_grid(
-    raw_uka, clean_fn = clean_fn, condition_col = condition_col,
+    raw_uka, clean_fn = clean_fn, comparison_col = comparison_col,
     spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, b = b, w = w,
     rank_uka_abs = rank_uka_abs, ppi_network = ppi_list, dataset_col = dataset_col
   )

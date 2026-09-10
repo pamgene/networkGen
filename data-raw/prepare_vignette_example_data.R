@@ -68,7 +68,7 @@ raw_single <- read.csv(
   file.path(network_generation_repo, "uka/GDSi/csUKA_NUDUL_CDKi_PHA-793887.csv"),
   check.names = FALSE
 )
-cleaned_single <- clean_uka_to_kinograte(raw_single, cs = TRUE)
+cleaned_single <- prep_uka(raw_single, cs = TRUE)
 cleaned_single <- add_privacy_noise(cleaned_single, c("LogFC", "fscore"))
 single_condition <- cleaned_single[cleaned_single$Sgroup_contrast == "4_T01 vs DMSO", ]
 
@@ -99,7 +99,7 @@ raw_sens <- read.csv(
   file.path(network_generation_repo, "data/sensitivity_gds_median_stk_cells_vs_RL_lessna.csv"),
   check.names = FALSE
 )
-cleaned_sens <- clean_sens_to_kinograte(raw_sens, control = NULL, zscore = FALSE)
+cleaned_sens <- prep_sens(raw_sens, control = NULL, zscore = FALSE)
 cleaned_sens <- add_privacy_noise(cleaned_sens, "LogFC")
 write.csv(
   cleaned_sens,
@@ -118,7 +118,7 @@ raw_full <- read.csv(
 )
 keep_conditions <- c("_A4-Fuk vs A3-KAW", "_HT vs A4-Fuk", "_MC-116 vs A4-Fuk")
 raw_trimmed <- raw_full[raw_full$Sgroup_contrast %in% keep_conditions, ]
-cleaned_batch <- clean_uka_to_kinograte(raw_trimmed, cs = TRUE)
+cleaned_batch <- prep_uka(raw_trimmed, cs = TRUE)
 cleaned_batch <- add_privacy_noise(cleaned_batch, c("LogFC", "fscore"))
 
 write.csv(

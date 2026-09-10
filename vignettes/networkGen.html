@@ -487,14 +487,14 @@ the end of this section); sequentially otherwise.</p>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;   multidataset/01_03h_Pr4_TvsC  73 126</span></span>
 <span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;   multidataset/02_06h_Pr3_TvsC  75 120</span></span>
 <span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;   multidataset/03_24h_Pr2_TvsC 102 263</span></span></code></pre></div>
-<p>This is raw (not pre-cleaned) data, so
+<p>This is raw (not pre-reshaped) data, so
 <code>run_network_grid()</code> needs a <code>clean_fn</code> –
-<code>Sgroup_contrast</code> is the condition column
-<code>clean_uka_to_kinograte()</code> produces. <code>spec_cutoff</code>
-<strong>and</strong> <code>w</code> as vectors grid every dataset’s
-condition against every cutoff x <code>w</code> combination – 3 datasets
-x 2 <code>spec_cutoff</code> values x 2 <code>w</code> values below, no
-loop written (<code>perc_cutoff</code>, <code>b</code>,
+<code>prep_uka()</code> carries the <code>Sgroup_contrast</code>
+comparison column through. <code>spec_cutoff</code> <strong>and</strong>
+<code>w</code> as vectors grid every dataset’s comparison against every
+cutoff x <code>w</code> combination – 3 datasets x 2
+<code>spec_cutoff</code> values x 2 <code>w</code> values below, no loop
+written (<code>perc_cutoff</code>, <code>b</code>,
 <code>rank_uka_abs</code> and <code>ppi_network</code> could grid the
 same way; kept at their defaults here so the example stays
 readable):</p>
@@ -502,11 +502,11 @@ readable):</p>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">dir.create</span>(multidataset_dir)</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>multidataset_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  raw_multidataset, <span class="at">clean_fn =</span> clean_uka_to_kinograte, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  raw_multidataset, <span class="at">clean_fn =</span> prep_uka, <span class="at">comparison_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">w =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>), <span class="at">ppi_network =</span> ppi_networkv12_502_kins,</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">respath =</span> multidataset_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ac9c2/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -517,7 +517,7 @@ readable):</p>
 <span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ac9c2/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -528,7 +528,7 @@ readable):</p>
 <span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ac9c2/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -539,7 +539,7 @@ readable):</p>
 <span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ac9c2/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -707,12 +707,12 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">dir.create</span>(paired_dir)</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>paired_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  uka_doses, <span class="at">comparison_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fl">0.5</span>, <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>,</span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">sens =</span> sens_nudul, <span class="at">sens_perc_cutoff =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>),</span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">ppi_network =</span> ppi_networkv12_502_kins, <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db862661b47/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ea2611a/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
@@ -725,7 +725,7 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; 7 sens_perc_cutoff 0.6                    </span></span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; 8 uka              uka_doses              </span></span>
 <span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; 9 sens             sens_nudul             </span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db862661b47/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp6HXu3o\\file5f0c3ea2611a/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
@@ -854,7 +854,7 @@ value in this example).</p>
 override – a check against an accidentally huge overnight run, not a
 time estimate:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">run_network_grid</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  uka_doses, <span class="at">comparison_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">seq</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="at">by =</span> <span class="fl">0.1</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.7</span>,</span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">FALSE</span>, <span class="at">max_tasks =</span> <span class="dv">5</span></span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>

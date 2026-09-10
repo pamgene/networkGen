@@ -19,7 +19,7 @@ uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, cs = FALSE)
 
 \item{cs}{Unused here, kept for call-site compatibility with the historic
 \code{uka_top()} signature (specificity-score column selection happens
-upstream, in \code{\link[=clean_uka_to_kinograte]{clean_uka_to_kinograte()}}).}
+upstream, in \code{\link[=prep_uka]{prep_uka()}}).}
 }
 \value{
 Data frame with columns \code{name}, \code{prize}, \code{type} ("Kinase"), \code{LogFC}.
