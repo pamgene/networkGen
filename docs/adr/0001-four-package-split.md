@@ -1,5 +1,10 @@
 # Split network generation, scoring, enrichment, and plotting into four packages
 
+> **Partially superseded by [0008](./0008-merge-enrich-into-plot.md):**
+> `networkEnrich` and `networkPlot` were merged into a single `networkPlot`
+> package, so the suite is now three packages, not four. The foundation +
+> layered-packages reasoning below still stands.
+
 `Network_generation`'s network-building, scoring, enrichment, and plotting
 logic is wanted in other projects and needs to interoperate cleanly, so it's
 becoming installable packages instead of `source()`d scripts. We considered
