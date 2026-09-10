@@ -135,6 +135,42 @@ test_that("run_network_grid grids sens_perc_cutoff independently of every uka-si
   expect_true(all(n_hits_by_cutoff[cutoffs == 0.9] == 2))
 })
 
+test_that("run_network_grid passes a single-network grid's ppi_network once to the batch, not per-task; a multi-network grid keeps it per-task", {
+  future::plan(future::sequential)
+  cleaned_uka <- data.frame(
+    Sgroup_contrast = rep(c("condA", "condB"), each = 2),
+    uniprotname = rep(c("K1", "K2"), 2), LogFC = c(3, 2, 3, 2), fscore = 2
+  )
+  ppi_one <- data.frame(head = "A", tail = "B", cost = 0.1)
+  ppi_two <- data.frame(head = "C", tail = "D", cost = 0.2)
+
+  capture <- NULL
+  local_mocked_bindings(
+    generate_networks_batch = function(tasks, generate_fn, ppi_network = NULL, extra_args = list(), progress = FALSE) {
+      capture <<- list(
+        n = length(tasks),
+        per_task_ppi = vapply(tasks, function(t) "ppi_network" %in% names(t$args), logical(1)),
+        shared = ppi_network
+      )
+      lapply(tasks, function(t) list(result = list(), meta = t$meta))
+    }
+  )
+
+  run_network_grid(
+    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    ppi_network = ppi_one, write = FALSE
+  )
+  expect_false(any(capture$per_task_ppi))          # not embedded in each task
+  expect_identical(capture$shared, ppi_one)        # passed once as the shared network
+
+  run_network_grid(
+    cleaned_uka, condition_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1,
+    ppi_network = list(one = ppi_one, two = ppi_two), write = FALSE
+  )
+  expect_true(all(capture$per_task_ppi))           # genuine multi-network grid: kept per-task
+  expect_null(capture$shared)
+})
+
 test_that("run_network_grid requires sens_perc_cutoff when sens is given", {
   cleaned_uka <- data.frame(
     Sgroup_contrast = "dose1", uniprotname = c("K1", "K2"), LogFC = c(3, 2), fscore = 2

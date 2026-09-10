@@ -295,6 +295,15 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
 
   generate_fn <- if (paired) generate_paired_network else generate_kinase_network
 
+  # When the grid spans a single reference network (the common case), hand
+  # it to generate_networks_batch() once as its shared `ppi_network` rather
+  # than copying the multi-MB data frame into every task's `args` -- each
+  # per-task copy is serialized afresh to every `future` worker (tens of
+  # GiB for a grid with many permutation-style tasks). Only a genuine
+  # multi-network grid keeps `ppi_network` per-task, and those are kept
+  # deliberately small.
+  single_ppi_network <- if (length(ppi_list) == 1) ppi_list[[1]] else NULL
+
   combos <- if (write) {
     prepare_args <- list(respath = respath, uka = raw_uka)
     if (paired) prepare_args$sens <- sens
@@ -310,8 +319,9 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
     cell <- grid[[i]]
     args <- list(
       uka = cell$uka_filt, condition = cell$condition, spec_cutoff = cell$spec_cutoff,
-      b = cell$b, w = cell$w, ppi_network = cell$ppi_network, write = write, ...
+      b = cell$b, w = cell$w, write = write, ...
     )
+    if (is.null(single_ppi_network)) args$ppi_network <- cell$ppi_network
     if (write) args$res.path <- combos$folders[[combos$combo_key[i]]]
     if (paired) args$sens <- cell$sens_filt
     meta <- list(
@@ -323,5 +333,5 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
     list(args = args, meta = meta)
   })
 
-  generate_networks_batch(tasks, generate_fn = generate_fn)
+  generate_networks_batch(tasks, generate_fn = generate_fn, ppi_network = single_ppi_network)
 }

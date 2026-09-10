@@ -29,6 +29,19 @@ by condition afterward — bookkeeping the condition-level precedent got for
 free by construction. Checkpointing (resume a partially-completed run)
 becomes per-build-task instead of per-condition.
 
+Refinement (added later): the flat task list must **not** carry the
+reference PPI network in each task's `args`. The condition-level precedent
+serialized that multi-MB data frame roughly once per worker; a flat list of
+`n_cells * (1 + nPerms)` tasks each holding their own copy serializes it
+once per *task* when `future` ships work to workers — tens of GiB for a
+realistic grid, which trips `future.globals.maxSize`. Instead the single
+shared network is passed once as `generate_networks_batch(..., ppi_network
+= <df>)` and applied per task inside the worker. `score_conditions()` is
+always called for one output folder at a time, and folders are keyed by
+`ppi_network_name`, so a call never spans two networks. `run_network_grid()`
+keeps a per-task `ppi_network` only for a genuine multi-network grid (those
+are deliberately small).
+
 Also established while building this: PCSF's compiled
 `.Call("_PCSF_call_sr", ...)` genuinely requires `library(PCSF)` to be
 loaded in each worker process (a real, previously-hit failure on Windows
