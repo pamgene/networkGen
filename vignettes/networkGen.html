@@ -370,7 +370,7 @@ appear in the result, <code>E</code> and <code>F</code> should not.</p>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>)</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>toy_result <span class="ot">&lt;-</span> <span class="fu">generate_kinase_network</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">uka =</span> toy_uka, <span class="at">ppi_network =</span> toy_ppi,</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="dv">0</span>, <span class="at">b =</span> <span class="dv">10</span>, <span class="at">condition =</span> <span class="st">&quot;toy_example&quot;</span>, <span class="at">seed =</span> <span class="dv">12345</span>, <span class="at">n =</span> <span class="dv">2</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="dv">0</span>, <span class="at">condition =</span> <span class="st">&quot;toy_example&quot;</span>, <span class="at">seed =</span> <span class="dv">12345</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>)</span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
@@ -385,25 +385,42 @@ appear in the result, <code>E</code> and <code>F</code> should not.</p>
 cheap path through <code>D</code>. <code>E</code> and <code>F</code>
 never appear.</p>
 </div>
-<div id="key-parameters" class="section level2">
-<h2>2. Key parameters</h2>
+<div id="how-pcsf-builds-a-network-and-its-two-main-knobs" class="section level2">
+<h2>2. How PCSF builds a network, and its two main knobs</h2>
+<p>PCSF (prize-collecting Steiner forest) starts from a reference
+network whose <strong>nodes carry prizes</strong> – here, each input
+kinase’s percentile rank – and whose <strong>edges carry costs</strong>.
+It picks a subnetwork that trades those off, roughly:</p>
+<pre><code>minimize (  sum of edge costs  +  b * sum of prizes of input nodes left out  )</code></pre>
+<p>Pulling an input node in costs edge weight; leaving it out forfeits
+<code>b</code> times its prize. Two parameters set where that balance
+lands:</p>
 <ul>
-<li><code>n</code> – number of randomized PCSF runs combined into one
-consensus network. Default 8; lowered to <code>n = 2</code> throughout
-this vignette for faster output.</li>
-<li><code>b</code> – multiplier on terminal-node prizes. A terminal is
-only included if <code>b * prize</code> exceeds <code>w</code>, the
-fixed cost of connecting it to the network – raise <code>b</code> (or
-lower <code>w</code>) if PCSF reports it can’t find a subnetwork. The
-examples below use <code>b = 10</code>, well above the default of
-<code>1.5</code>, because this vignette’s prize values (percentile
-ranks, 0-1) times <code>1.5</code> don’t clear <code>w</code>’s default
-cost of <code>10</code> for most nodes.</li>
-<li><code>w</code>, <code>r</code>, <code>mu</code> – less commonly
-tuned: <code>w</code> is the connection cost <code>b</code> trades off
-against; <code>r</code> is the per-run random noise fraction;
-<code>mu</code> penalizes routing through high-degree hub genes.</li>
+<li><strong><code>b</code></strong> – multiplies every prize. Higher
+<code>b</code> makes leaving nodes out expensive, so PCSF pulls in more
+input nodes <strong>and</strong> more connecting (Steiner) nodes: a
+bigger network. Default <code>2</code>.</li>
+<li><strong><code>w</code></strong> – the cost of attaching an input
+node straight to an artificial root instead of routing to it through the
+network. Low <code>w</code> lets isolated nodes in cheaply (they show up
+as tiny fragments, or drop out of the node list entirely); high
+<code>w</code> means a node is only kept if the network already runs
+near it – fewer, better-connected pieces. A lone node survives only when
+<code>b * prize &gt; w</code>. Default <code>2</code> (PCSF’s own
+default).</li>
 </ul>
+<p>If PCSF reports it can’t find a subnetwork, raise <code>b</code> (or
+lower <code>w</code>). The defaults suit input node sets that are
+biologically related (real kinase hits from one comparison usually are);
+an unrelated set may need a larger <code>b</code> and <code>w</code> to
+knit together at all – so this vignette leaves
+<code>b</code>/<code>w</code> at their defaults everywhere and the
+examples still build real networks.</p>
+<p>Less commonly tuned: <code>n</code> (randomized runs combined into
+one consensus network – default 8, lowered to <code>n = 2</code>
+throughout this vignette for speed), <code>r</code> (per-run random
+noise fraction), <code>mu</code> (penalty on routing through high-degree
+hub genes).</p>
 <p>Full parameter documentation:
 <code>?generate_kinase_network</code>.</p>
 <p><code>networkGen</code> also ships a real reference PPI network as
@@ -414,29 +431,29 @@ plus two narrower variants: <code>ppi_networkv12_filt</code>, and
 kinases, ~107K edges vs. 1.1M for the full network – good enough for a
 kinase-activity network and much faster, used throughout the rest of
 this vignette):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">nrow</span>(ppi_networkv12)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; [1] 1138434</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">nrow</span>(ppi_networkv12_502_kins)</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] 107508</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">head</span>(ppi_networkv12_502_kins)</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;   head  tail    cost</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1 ARF5  GGA1  0.406 </span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 2 ARF5  IKBKG 0.357 </span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; 3 M6PR  GGA1  0.0430</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; 4 FKBP4 FKBP5 0.0280</span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; 5 FKBP4 CDK5  0.371 </span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; 6 FKBP4 AKT2  0.437</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">nrow</span>(ppi_networkv12)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] 1138434</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">nrow</span>(ppi_networkv12_502_kins)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1] 107508</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">head</span>(ppi_networkv12_502_kins)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 3</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;   head  tail    cost</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 1 ARF5  GGA1  0.406 </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 2 ARF5  IKBKG 0.357 </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; 3 M6PR  GGA1  0.0430</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; 4 FKBP4 FKBP5 0.0280</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; 5 FKBP4 CDK5  0.371 </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; 6 FKBP4 AKT2  0.437</span></span></code></pre></div>
 </div>
 <div id="running-multiple-networks-optionally-in-parallel" class="section level2">
 <h2>3. Running multiple networks, optionally in parallel</h2>
 <p><code>run_network_grid()</code> is the one entry point for this
 package – one network or many, kinase-only or paired, one parameter
 combination or a whole grid of them. You specify the parameters to tune
-(e.g. cutoffs, <code>b</code>, <code>ppi_network</code>, which datasets)
-and <code>run_network_grid()</code> builds a grid of every
-combination.</p>
+(e.g. cutoffs, <code>b</code>, <code>w</code>, <code>ppi_network</code>,
+which datasets) and <code>run_network_grid()</code> builds a grid of
+every combination.</p>
 <p>For each condition and parameter combination,
 <code>run_network_grid()</code>:</p>
 <ol style="list-style-type: decimal">
@@ -455,207 +472,214 @@ the end of this section); sequentially otherwise.</p>
 <p>UKA exports are named
 <code>UKA_&lt;PTK|STK&gt;_&lt;number&gt;_&lt;dataset name&gt;.csv</code>.
 3 real timepoints below, each a real PTK+STK pair:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>multidataset_paths <span class="ot">&lt;-</span> <span class="fu">list.files</span>(</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="st">&quot;example_data/multidataset&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.csv$&quot;</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>)</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">basename</span>(multidataset_paths)</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;UKA_PTK_01_03h_Pr4_TvsC.csv&quot; &quot;UKA_PTK_02_06h_Pr3_TvsC.csv&quot;</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [3] &quot;UKA_PTK_03_24h_Pr2_TvsC.csv&quot; &quot;UKA_STK_01_03h_Pr4_TvsC.csv&quot;</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [5] &quot;UKA_STK_02_06h_Pr3_TvsC.csv&quot; &quot;UKA_STK_03_24h_Pr2_TvsC.csv&quot;</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>raw_multidataset <span class="ot">&lt;-</span> <span class="fu">load_uka_dataset_files</span>(multidataset_paths)</span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">table</span>(raw_multidataset<span class="sc">$</span>dataset, raw_multidataset<span class="sc">$</span>kinase_type)</span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;                               </span></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;                                PTK STK</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;   multidataset/01_03h_Pr4_TvsC  73 126</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;   multidataset/02_06h_Pr3_TvsC  75 120</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;   multidataset/03_24h_Pr2_TvsC 102 263</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>multidataset_paths <span class="ot">&lt;-</span> <span class="fu">list.files</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="st">&quot;example_data/multidataset&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.csv$&quot;</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">basename</span>(multidataset_paths)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;UKA_PTK_01_03h_Pr4_TvsC.csv&quot; &quot;UKA_PTK_02_06h_Pr3_TvsC.csv&quot;</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; [3] &quot;UKA_PTK_03_24h_Pr2_TvsC.csv&quot; &quot;UKA_STK_01_03h_Pr4_TvsC.csv&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [5] &quot;UKA_STK_02_06h_Pr3_TvsC.csv&quot; &quot;UKA_STK_03_24h_Pr2_TvsC.csv&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>raw_multidataset <span class="ot">&lt;-</span> <span class="fu">load_uka_dataset_files</span>(multidataset_paths)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">table</span>(raw_multidataset<span class="sc">$</span>dataset, raw_multidataset<span class="sc">$</span>kinase_type)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;                               </span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;                                PTK STK</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;   multidataset/01_03h_Pr4_TvsC  73 126</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;   multidataset/02_06h_Pr3_TvsC  75 120</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;   multidataset/03_24h_Pr2_TvsC 102 263</span></span></code></pre></div>
 <p>This is raw (not pre-cleaned) data, so
 <code>run_network_grid()</code> needs a <code>clean_fn</code> –
 <code>Sgroup_contrast</code> is the condition column
 <code>clean_uka_to_kinograte()</code> produces. <code>spec_cutoff</code>
-<strong>and</strong> <code>b</code> as vectors grid every dataset’s
-condition against every cutoff x <code>b</code> combination – 3 datasets
-x 2 <code>spec_cutoff</code> values x 2 <code>b</code> values below, no
-loop written (<code>perc_cutoff</code> and <code>ppi_network</code>
-could grid the same way; kept fixed here so the example stays
+<strong>and</strong> <code>w</code> as vectors grid every dataset’s
+condition against every cutoff x <code>w</code> combination – 3 datasets
+x 2 <code>spec_cutoff</code> values x 2 <code>w</code> values below, no
+loop written (<code>perc_cutoff</code>, <code>b</code>,
+<code>rank_uka_abs</code> and <code>ppi_network</code> could grid the
+same way; kept at their defaults here so the example stays
 readable):</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>multidataset_dir <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">dir.create</span>(multidataset_dir)</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>multidataset_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  raw_multidataset, <span class="at">clean_fn =</span> clean_uka_to_kinograte, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">15</span>), <span class="at">ppi_network =</span> ppi_networkv12_502_kins,</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">respath =</span> multidataset_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec47a468c5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10&quot;</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 2</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1                      </span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 3 b            10                     </span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs TRUE                   </span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network  ppi_networkv12_502_kins</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; 6 uka          raw_multidataset       </span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec47a468c5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15&quot;</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 2</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1                      </span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; 3 b            15                     </span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs TRUE                   </span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network  ppi_networkv12_502_kins</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; 6 uka          raw_multidataset       </span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec47a468c5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10&quot;</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 2</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1.5                    </span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; 3 b            10                     </span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs TRUE                   </span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network  ppi_networkv12_502_kins</span></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; 6 uka          raw_multidataset       </span></span>
-<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec47a468c5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15&quot;</span></span>
-<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 2</span></span>
-<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
-<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
-<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1.5                    </span></span>
-<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
-<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; 3 b            15                     </span></span>
-<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs TRUE                   </span></span>
-<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network  ppi_networkv12_502_kins</span></span>
-<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; 6 uka          raw_multidataset       </span></span>
-<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-58"><a href="#cb6-58" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-59"><a href="#cb6-59" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-60"><a href="#cb6-60" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-61"><a href="#cb6-61" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-62"><a href="#cb6-62" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-63"><a href="#cb6-63" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-64"><a href="#cb6-64" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-65"><a href="#cb6-65" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-66"><a href="#cb6-66" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-67"><a href="#cb6-67" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-68"><a href="#cb6-68" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-69"><a href="#cb6-69" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-70"><a href="#cb6-70" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-71"><a href="#cb6-71" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-72"><a href="#cb6-72" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-73"><a href="#cb6-73" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-74"><a href="#cb6-74" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-75"><a href="#cb6-75" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-76"><a href="#cb6-76" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-77"><a href="#cb6-77" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-78"><a href="#cb6-78" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-79"><a href="#cb6-79" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-80"><a href="#cb6-80" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-81"><a href="#cb6-81" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-82"><a href="#cb6-82" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-83"><a href="#cb6-83" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-84"><a href="#cb6-84" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-85"><a href="#cb6-85" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-86"><a href="#cb6-86" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-87"><a href="#cb6-87" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-88"><a href="#cb6-88" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-89"><a href="#cb6-89" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-90"><a href="#cb6-90" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-91"><a href="#cb6-91" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-92"><a href="#cb6-92" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-93"><a href="#cb6-93" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-94"><a href="#cb6-94" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-95"><a href="#cb6-95" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-96"><a href="#cb6-96" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-97"><a href="#cb6-97" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-98"><a href="#cb6-98" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-99"><a href="#cb6-99" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-100"><a href="#cb6-100" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-101"><a href="#cb6-101" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-102"><a href="#cb6-102" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-103"><a href="#cb6-103" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb6-104"><a href="#cb6-104" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb6-105"><a href="#cb6-105" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb6-106"><a href="#cb6-106" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb6-107"><a href="#cb6-107" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb6-108"><a href="#cb6-108" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2</span></span>
-<span id="cb6-109"><a href="#cb6-109" tabindex="-1"></a></span>
-<span id="cb6-110"><a href="#cb6-110" tabindex="-1"></a><span class="cf">for</span> (item <span class="cf">in</span> multidataset_results) {</span>
-<span id="cb6-111"><a href="#cb6-111" tabindex="-1"></a>  <span class="fu">cat</span>(item<span class="sc">$</span>meta<span class="sc">$</span>dataset, <span class="st">&quot;|&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>condition, <span class="st">&quot;| spec_cutoff =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>spec_cutoff,</span>
-<span id="cb6-112"><a href="#cb6-112" tabindex="-1"></a>    <span class="st">&quot;| b =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>b, <span class="st">&quot;: &quot;</span>,</span>
-<span id="cb6-113"><a href="#cb6-113" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(item<span class="sc">$</span>result)) <span class="st">&quot;no subnetwork&quot;</span> <span class="cf">else</span> <span class="fu">paste</span>(<span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>nodes), <span class="st">&quot;nodes&quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb6-114"><a href="#cb6-114" tabindex="-1"></a>    <span class="at">sep =</span> <span class="st">&quot;&quot;</span></span>
-<span id="cb6-115"><a href="#cb6-115" tabindex="-1"></a>  )</span>
-<span id="cb6-116"><a href="#cb6-116" tabindex="-1"></a>}</span>
-<span id="cb6-117"><a href="#cb6-117" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1| b =10: 24 nodes</span></span>
-<span id="cb6-118"><a href="#cb6-118" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1| b =15: 26 nodes</span></span>
-<span id="cb6-119"><a href="#cb6-119" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1.5| b =10: 6 nodes</span></span>
-<span id="cb6-120"><a href="#cb6-120" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1.5| b =15: 6 nodes</span></span>
-<span id="cb6-121"><a href="#cb6-121" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1| b =10: 36 nodes</span></span>
-<span id="cb6-122"><a href="#cb6-122" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1| b =15: 36 nodes</span></span>
-<span id="cb6-123"><a href="#cb6-123" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1.5| b =10: 17 nodes</span></span>
-<span id="cb6-124"><a href="#cb6-124" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1.5| b =15: 17 nodes</span></span>
-<span id="cb6-125"><a href="#cb6-125" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1| b =10: 53 nodes</span></span>
-<span id="cb6-126"><a href="#cb6-126" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1| b =15: 51 nodes</span></span>
-<span id="cb6-127"><a href="#cb6-127" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1.5| b =10: 23 nodes</span></span>
-<span id="cb6-128"><a href="#cb6-128" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1.5| b =15: 22 nodes</span></span>
-<span id="cb6-129"><a href="#cb6-129" tabindex="-1"></a></span>
-<span id="cb6-130"><a href="#cb6-130" tabindex="-1"></a><span class="fu">list.files</span>(multidataset_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-131"><a href="#cb6-131" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-132"><a href="#cb6-132" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-133"><a href="#cb6-133" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-134"><a href="#cb6-134" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-135"><a href="#cb6-135" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-136"><a href="#cb6-136" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-137"><a href="#cb6-137" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/params.csv&quot;                               </span></span>
-<span id="cb6-138"><a href="#cb6-138" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-139"><a href="#cb6-139" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-140"><a href="#cb6-140" tabindex="-1"></a><span class="co">#&gt; [10] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-141"><a href="#cb6-141" tabindex="-1"></a><span class="co">#&gt; [11] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-142"><a href="#cb6-142" tabindex="-1"></a><span class="co">#&gt; [12] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-143"><a href="#cb6-143" tabindex="-1"></a><span class="co">#&gt; [13] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-144"><a href="#cb6-144" tabindex="-1"></a><span class="co">#&gt; [14] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-145"><a href="#cb6-145" tabindex="-1"></a><span class="co">#&gt; [15] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-146"><a href="#cb6-146" tabindex="-1"></a><span class="co">#&gt; [16] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-147"><a href="#cb6-147" tabindex="-1"></a><span class="co">#&gt; [17] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/params.csv&quot;                               </span></span>
-<span id="cb6-148"><a href="#cb6-148" tabindex="-1"></a><span class="co">#&gt; [18] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-149"><a href="#cb6-149" tabindex="-1"></a><span class="co">#&gt; [19] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;  </span></span>
-<span id="cb6-150"><a href="#cb6-150" tabindex="-1"></a><span class="co">#&gt; [20] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;</span></span>
-<span id="cb6-151"><a href="#cb6-151" tabindex="-1"></a><span class="co">#&gt; [21] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-152"><a href="#cb6-152" tabindex="-1"></a><span class="co">#&gt; [22] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-153"><a href="#cb6-153" tabindex="-1"></a><span class="co">#&gt; [23] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;    </span></span>
-<span id="cb6-154"><a href="#cb6-154" tabindex="-1"></a><span class="co">#&gt; [24] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-155"><a href="#cb6-155" tabindex="-1"></a><span class="co">#&gt; [25] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-156"><a href="#cb6-156" tabindex="-1"></a><span class="co">#&gt; [26] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;    </span></span>
-<span id="cb6-157"><a href="#cb6-157" tabindex="-1"></a><span class="co">#&gt; [27] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/params.csv&quot;                                 </span></span>
-<span id="cb6-158"><a href="#cb6-158" tabindex="-1"></a><span class="co">#&gt; [28] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-159"><a href="#cb6-159" tabindex="-1"></a><span class="co">#&gt; [29] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-160"><a href="#cb6-160" tabindex="-1"></a><span class="co">#&gt; [30] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;    </span></span>
-<span id="cb6-161"><a href="#cb6-161" tabindex="-1"></a><span class="co">#&gt; [31] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-162"><a href="#cb6-162" tabindex="-1"></a><span class="co">#&gt; [32] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-163"><a href="#cb6-163" tabindex="-1"></a><span class="co">#&gt; [33] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;    </span></span>
-<span id="cb6-164"><a href="#cb6-164" tabindex="-1"></a><span class="co">#&gt; [34] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-165"><a href="#cb6-165" tabindex="-1"></a><span class="co">#&gt; [35] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-166"><a href="#cb6-166" tabindex="-1"></a><span class="co">#&gt; [36] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;    </span></span>
-<span id="cb6-167"><a href="#cb6-167" tabindex="-1"></a><span class="co">#&gt; [37] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/params.csv&quot;                                 </span></span>
-<span id="cb6-168"><a href="#cb6-168" tabindex="-1"></a><span class="co">#&gt; [38] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-169"><a href="#cb6-169" tabindex="-1"></a><span class="co">#&gt; [39] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;      </span></span>
-<span id="cb6-170"><a href="#cb6-170" tabindex="-1"></a><span class="co">#&gt; [40] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b15/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span></code></pre></div>
-<p>Four folders (one per <code>spec_cutoff</code> x <code>b</code>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>multidataset_dir <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">dir.create</span>(multidataset_dir)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>multidataset_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  raw_multidataset, <span class="at">clean_fn =</span> clean_uka_to_kinograte, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">w =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>), <span class="at">ppi_network =</span> ppi_networkv12_502_kins,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">respath =</span> multidataset_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1                      </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 3 b            2                      </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 4 w            2                      </span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1                      </span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; 3 b            2                      </span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; 4 w            4                      </span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
+<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
+<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
+<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1.5                    </span></span>
+<span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
+<span id="cb7-37"><a href="#cb7-37" tabindex="-1"></a><span class="co">#&gt; 3 b            2                      </span></span>
+<span id="cb7-38"><a href="#cb7-38" tabindex="-1"></a><span class="co">#&gt; 4 w            2                      </span></span>
+<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
+<span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
+<span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db854333bc5/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
+<span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
+<span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
+<span id="cb7-46"><a href="#cb7-46" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff  1.5                    </span></span>
+<span id="cb7-47"><a href="#cb7-47" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff  0.5                    </span></span>
+<span id="cb7-48"><a href="#cb7-48" tabindex="-1"></a><span class="co">#&gt; 3 b            2                      </span></span>
+<span id="cb7-49"><a href="#cb7-49" tabindex="-1"></a><span class="co">#&gt; 4 w            4                      </span></span>
+<span id="cb7-50"><a href="#cb7-50" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
+<span id="cb7-51"><a href="#cb7-51" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
+<span id="cb7-52"><a href="#cb7-52" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
+<span id="cb7-53"><a href="#cb7-53" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-54"><a href="#cb7-54" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-55"><a href="#cb7-55" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-56"><a href="#cb7-56" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-57"><a href="#cb7-57" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-58"><a href="#cb7-58" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-59"><a href="#cb7-59" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-60"><a href="#cb7-60" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-61"><a href="#cb7-61" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-62"><a href="#cb7-62" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-63"><a href="#cb7-63" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-64"><a href="#cb7-64" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-65"><a href="#cb7-65" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-66"><a href="#cb7-66" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-67"><a href="#cb7-67" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-68"><a href="#cb7-68" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-69"><a href="#cb7-69" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-70"><a href="#cb7-70" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-71"><a href="#cb7-71" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-72"><a href="#cb7-72" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-73"><a href="#cb7-73" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-74"><a href="#cb7-74" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-75"><a href="#cb7-75" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-76"><a href="#cb7-76" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-77"><a href="#cb7-77" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-78"><a href="#cb7-78" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-79"><a href="#cb7-79" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-80"><a href="#cb7-80" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-81"><a href="#cb7-81" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-82"><a href="#cb7-82" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-83"><a href="#cb7-83" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-84"><a href="#cb7-84" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-85"><a href="#cb7-85" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-86"><a href="#cb7-86" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-87"><a href="#cb7-87" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-88"><a href="#cb7-88" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-89"><a href="#cb7-89" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-90"><a href="#cb7-90" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-91"><a href="#cb7-91" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-92"><a href="#cb7-92" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-93"><a href="#cb7-93" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-94"><a href="#cb7-94" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-95"><a href="#cb7-95" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-96"><a href="#cb7-96" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-97"><a href="#cb7-97" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-98"><a href="#cb7-98" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-99"><a href="#cb7-99" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-100"><a href="#cb7-100" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-101"><a href="#cb7-101" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-102"><a href="#cb7-102" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-103"><a href="#cb7-103" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-104"><a href="#cb7-104" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-105"><a href="#cb7-105" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-106"><a href="#cb7-106" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-107"><a href="#cb7-107" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb7-108"><a href="#cb7-108" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb7-109"><a href="#cb7-109" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb7-110"><a href="#cb7-110" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb7-111"><a href="#cb7-111" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb7-112"><a href="#cb7-112" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2</span></span>
+<span id="cb7-113"><a href="#cb7-113" tabindex="-1"></a></span>
+<span id="cb7-114"><a href="#cb7-114" tabindex="-1"></a><span class="cf">for</span> (item <span class="cf">in</span> multidataset_results) {</span>
+<span id="cb7-115"><a href="#cb7-115" tabindex="-1"></a>  <span class="fu">cat</span>(item<span class="sc">$</span>meta<span class="sc">$</span>dataset, <span class="st">&quot;|&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>condition, <span class="st">&quot;| spec_cutoff =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>spec_cutoff,</span>
+<span id="cb7-116"><a href="#cb7-116" tabindex="-1"></a>    <span class="st">&quot;| w =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>w, <span class="st">&quot;: &quot;</span>,</span>
+<span id="cb7-117"><a href="#cb7-117" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(item<span class="sc">$</span>result)) <span class="st">&quot;no subnetwork&quot;</span> <span class="cf">else</span> <span class="fu">paste</span>(<span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>nodes), <span class="st">&quot;nodes&quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb7-118"><a href="#cb7-118" tabindex="-1"></a>    <span class="at">sep =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb7-119"><a href="#cb7-119" tabindex="-1"></a>  )</span>
+<span id="cb7-120"><a href="#cb7-120" tabindex="-1"></a>}</span>
+<span id="cb7-121"><a href="#cb7-121" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1| w =2: 24 nodes</span></span>
+<span id="cb7-122"><a href="#cb7-122" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1| w =4: 26 nodes</span></span>
+<span id="cb7-123"><a href="#cb7-123" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1.5| w =2: 6 nodes</span></span>
+<span id="cb7-124"><a href="#cb7-124" tabindex="-1"></a><span class="co">#&gt; multidataset/01_03h_Pr4_TvsC|Sgroup1_T1 vs Control| spec_cutoff =1.5| w =4: 6 nodes</span></span>
+<span id="cb7-125"><a href="#cb7-125" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1| w =2: 30 nodes</span></span>
+<span id="cb7-126"><a href="#cb7-126" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1| w =4: 30 nodes</span></span>
+<span id="cb7-127"><a href="#cb7-127" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1.5| w =2: 17 nodes</span></span>
+<span id="cb7-128"><a href="#cb7-128" tabindex="-1"></a><span class="co">#&gt; multidataset/02_06h_Pr3_TvsC|U2OS6h_DrugA vs Control| spec_cutoff =1.5| w =4: 17 nodes</span></span>
+<span id="cb7-129"><a href="#cb7-129" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1| w =2: 53 nodes</span></span>
+<span id="cb7-130"><a href="#cb7-130" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1| w =4: 51 nodes</span></span>
+<span id="cb7-131"><a href="#cb7-131" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1.5| w =2: 23 nodes</span></span>
+<span id="cb7-132"><a href="#cb7-132" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1.5| w =4: 22 nodes</span></span>
+<span id="cb7-133"><a href="#cb7-133" tabindex="-1"></a></span>
+<span id="cb7-134"><a href="#cb7-134" tabindex="-1"></a><span class="fu">list.files</span>(multidataset_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-135"><a href="#cb7-135" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-136"><a href="#cb7-136" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-137"><a href="#cb7-137" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-138"><a href="#cb7-138" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-139"><a href="#cb7-139" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-140"><a href="#cb7-140" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-141"><a href="#cb7-141" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                   </span></span>
+<span id="cb7-142"><a href="#cb7-142" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-143"><a href="#cb7-143" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-144"><a href="#cb7-144" tabindex="-1"></a><span class="co">#&gt; [10] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-145"><a href="#cb7-145" tabindex="-1"></a><span class="co">#&gt; [11] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-146"><a href="#cb7-146" tabindex="-1"></a><span class="co">#&gt; [12] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-147"><a href="#cb7-147" tabindex="-1"></a><span class="co">#&gt; [13] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-148"><a href="#cb7-148" tabindex="-1"></a><span class="co">#&gt; [14] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-149"><a href="#cb7-149" tabindex="-1"></a><span class="co">#&gt; [15] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-150"><a href="#cb7-150" tabindex="-1"></a><span class="co">#&gt; [16] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-151"><a href="#cb7-151" tabindex="-1"></a><span class="co">#&gt; [17] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                   </span></span>
+<span id="cb7-152"><a href="#cb7-152" tabindex="-1"></a><span class="co">#&gt; [18] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-153"><a href="#cb7-153" tabindex="-1"></a><span class="co">#&gt; [19] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-154"><a href="#cb7-154" tabindex="-1"></a><span class="co">#&gt; [20] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-155"><a href="#cb7-155" tabindex="-1"></a><span class="co">#&gt; [21] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-156"><a href="#cb7-156" tabindex="-1"></a><span class="co">#&gt; [22] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-157"><a href="#cb7-157" tabindex="-1"></a><span class="co">#&gt; [23] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-158"><a href="#cb7-158" tabindex="-1"></a><span class="co">#&gt; [24] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
+<span id="cb7-159"><a href="#cb7-159" tabindex="-1"></a><span class="co">#&gt; [25] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-160"><a href="#cb7-160" tabindex="-1"></a><span class="co">#&gt; [26] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-161"><a href="#cb7-161" tabindex="-1"></a><span class="co">#&gt; [27] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-162"><a href="#cb7-162" tabindex="-1"></a><span class="co">#&gt; [28] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                     </span></span>
+<span id="cb7-163"><a href="#cb7-163" tabindex="-1"></a><span class="co">#&gt; [29] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-164"><a href="#cb7-164" tabindex="-1"></a><span class="co">#&gt; [30] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-165"><a href="#cb7-165" tabindex="-1"></a><span class="co">#&gt; [31] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-166"><a href="#cb7-166" tabindex="-1"></a><span class="co">#&gt; [32] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-167"><a href="#cb7-167" tabindex="-1"></a><span class="co">#&gt; [33] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-168"><a href="#cb7-168" tabindex="-1"></a><span class="co">#&gt; [34] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-169"><a href="#cb7-169" tabindex="-1"></a><span class="co">#&gt; [35] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
+<span id="cb7-170"><a href="#cb7-170" tabindex="-1"></a><span class="co">#&gt; [36] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-171"><a href="#cb7-171" tabindex="-1"></a><span class="co">#&gt; [37] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-172"><a href="#cb7-172" tabindex="-1"></a><span class="co">#&gt; [38] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-173"><a href="#cb7-173" tabindex="-1"></a><span class="co">#&gt; [39] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                     </span></span>
+<span id="cb7-174"><a href="#cb7-174" tabindex="-1"></a><span class="co">#&gt; [40] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-175"><a href="#cb7-175" tabindex="-1"></a><span class="co">#&gt; [41] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-176"><a href="#cb7-176" tabindex="-1"></a><span class="co">#&gt; [42] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span></code></pre></div>
+<p>Four folders (one per <code>spec_cutoff</code> x <code>w</code>
 combination), each holding all 3 datasets’
 <code>nodes</code>/<code>edges</code>/<code>wc_df</code> CSVs plus one
 shared <code>params.csv</code> – not one folder per (dataset,
-<code>spec_cutoff</code>, <code>b</code>) combination, and not one
-folder covering multiple <code>spec_cutoff</code>/<code>b</code> values
+<code>spec_cutoff</code>, <code>w</code>) combination, and not one
+folder covering multiple <code>spec_cutoff</code>/<code>w</code> values
 at once.</p>
 </div>
 <div id="paired-with-sensitivity-data-multiple-perc_cutoff-values-on-each-side" class="section level3">
@@ -673,146 +697,149 @@ value and reusing each filtered version across every condition.
 (sensitivity side) grid independently of each other – there’s no
 <code>spec_cutoff</code>-equivalent for sensitivity data, since
 specificity is a kinase-activity-only concept:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>uka_doses <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;example_data/cdk_inhibitor_PHA-793887_all_doses.csv&quot;</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">unique</span>(uka_doses<span class="sc">$</span>Sgroup_contrast)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;0.5_T01 vs DMSO&quot; &quot;2_T01 vs DMSO&quot;   &quot;4_T01 vs DMSO&quot;</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>sens <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;example_data/sensitivity_example.csv&quot;</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>sens_nudul <span class="ot">&lt;-</span> sens[sens<span class="sc">$</span>cell_line <span class="sc">==</span> <span class="st">&quot;NUDUL1&quot;</span>, ]</span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>paired_dir <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">dir.create</span>(paired_dir)</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>paired_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fl">0.5</span>, <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">b =</span> <span class="dv">10</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">sens =</span> sens_nudul, <span class="at">sens_perc_cutoff =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>),</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">ppi_network =</span> ppi_networkv12_502_kins, <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>)</span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec17a073c3/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10&quot;</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 8 × 2</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff      0.5                    </span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff      0.5                    </span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; 3 b                10                     </span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs     TRUE                   </span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network      ppi_networkv12_502_kins</span></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; 6 sens_perc_cutoff 0.6                    </span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; 7 uka              uka_doses              </span></span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; 8 sens             sens_nudul             </span></span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpGi7e3t\\file56ec17a073c3/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10&quot;</span></span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; # A tibble: 8 × 2</span></span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff      0.5                    </span></span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff      0.5                    </span></span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; 3 b                10                     </span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; 4 rank_uka_abs     TRUE                   </span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt; 5 ppi_network      ppi_networkv12_502_kins</span></span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; 6 sens_perc_cutoff 0.7                    </span></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; 7 uka              uka_doses              </span></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; 8 sens             sens_nudul             </span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  16</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             19</span></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       1</span></span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
-<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
-<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
-<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  16</span></span>
-<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             16</span></span>
-<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       1</span></span>
-<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 2</span></span>
-<span id="cb8-57"><a href="#cb8-57" tabindex="-1"></a><span class="co">#&gt;   type        n_nodes</span></span>
-<span id="cb8-58"><a href="#cb8-58" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;         &lt;int&gt;</span></span>
-<span id="cb8-59"><a href="#cb8-59" tabindex="-1"></a><span class="co">#&gt; 1 Kinase           18</span></span>
-<span id="cb8-60"><a href="#cb8-60" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity      20</span></span>
-<span id="cb8-61"><a href="#cb8-61" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-62"><a href="#cb8-62" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-63"><a href="#cb8-63" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-64"><a href="#cb8-64" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-65"><a href="#cb8-65" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb8-66"><a href="#cb8-66" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 2</span></span>
-<span id="cb8-67"><a href="#cb8-67" tabindex="-1"></a><span class="co">#&gt;   type        n_nodes</span></span>
-<span id="cb8-68"><a href="#cb8-68" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;         &lt;int&gt;</span></span>
-<span id="cb8-69"><a href="#cb8-69" tabindex="-1"></a><span class="co">#&gt; 1 Kinase           18</span></span>
-<span id="cb8-70"><a href="#cb8-70" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity      17</span></span>
-<span id="cb8-71"><a href="#cb8-71" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-72"><a href="#cb8-72" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-73"><a href="#cb8-73" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-74"><a href="#cb8-74" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-75"><a href="#cb8-75" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb8-76"><a href="#cb8-76" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
-<span id="cb8-77"><a href="#cb8-77" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
-<span id="cb8-78"><a href="#cb8-78" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
-<span id="cb8-79"><a href="#cb8-79" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  28</span></span>
-<span id="cb8-80"><a href="#cb8-80" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             15</span></span>
-<span id="cb8-81"><a href="#cb8-81" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       5</span></span>
-<span id="cb8-82"><a href="#cb8-82" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-83"><a href="#cb8-83" tabindex="-1"></a><span class="co">#&gt;   97.92% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-84"><a href="#cb8-84" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-85"><a href="#cb8-85" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-86"><a href="#cb8-86" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
-<span id="cb8-87"><a href="#cb8-87" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
-<span id="cb8-88"><a href="#cb8-88" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
-<span id="cb8-89"><a href="#cb8-89" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
-<span id="cb8-90"><a href="#cb8-90" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  29</span></span>
-<span id="cb8-91"><a href="#cb8-91" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             13</span></span>
-<span id="cb8-92"><a href="#cb8-92" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       4</span></span>
-<span id="cb8-93"><a href="#cb8-93" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
-<span id="cb8-94"><a href="#cb8-94" tabindex="-1"></a><span class="co">#&gt;   97.83% of your terminal nodes are included in the interactome</span></span>
-<span id="cb8-95"><a href="#cb8-95" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
-<span id="cb8-96"><a href="#cb8-96" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
-<span id="cb8-97"><a href="#cb8-97" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2</span></span>
-<span id="cb8-98"><a href="#cb8-98" tabindex="-1"></a></span>
-<span id="cb8-99"><a href="#cb8-99" tabindex="-1"></a><span class="cf">for</span> (item <span class="cf">in</span> paired_results) {</span>
-<span id="cb8-100"><a href="#cb8-100" tabindex="-1"></a>  <span class="fu">cat</span>(item<span class="sc">$</span>meta<span class="sc">$</span>condition, <span class="st">&quot;| sens_perc_cutoff =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>sens_perc_cutoff, <span class="st">&quot;: &quot;</span>,</span>
-<span id="cb8-101"><a href="#cb8-101" tabindex="-1"></a>    <span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>nodes), <span class="st">&quot; nodes, &quot;</span>, <span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>edges), <span class="st">&quot; edges</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb8-102"><a href="#cb8-102" tabindex="-1"></a>    <span class="at">sep =</span> <span class="st">&quot;&quot;</span></span>
-<span id="cb8-103"><a href="#cb8-103" tabindex="-1"></a>  )</span>
-<span id="cb8-104"><a href="#cb8-104" tabindex="-1"></a>}</span>
-<span id="cb8-105"><a href="#cb8-105" tabindex="-1"></a><span class="co">#&gt; 0.5_T01 vs DMSO| sens_perc_cutoff =0.6: 46 nodes, 46 edges</span></span>
-<span id="cb8-106"><a href="#cb8-106" tabindex="-1"></a><span class="co">#&gt; 0.5_T01 vs DMSO| sens_perc_cutoff =0.7: 43 nodes, 45 edges</span></span>
-<span id="cb8-107"><a href="#cb8-107" tabindex="-1"></a><span class="co">#&gt; 2_T01 vs DMSO| sens_perc_cutoff =0.6: 51 nodes, 53 edges</span></span>
-<span id="cb8-108"><a href="#cb8-108" tabindex="-1"></a><span class="co">#&gt; 2_T01 vs DMSO| sens_perc_cutoff =0.7: 48 nodes, 49 edges</span></span>
-<span id="cb8-109"><a href="#cb8-109" tabindex="-1"></a><span class="co">#&gt; 4_T01 vs DMSO| sens_perc_cutoff =0.6: 64 nodes, 67 edges</span></span>
-<span id="cb8-110"><a href="#cb8-110" tabindex="-1"></a><span class="co">#&gt; 4_T01 vs DMSO| sens_perc_cutoff =0.7: 62 nodes, 66 edges</span></span>
-<span id="cb8-111"><a href="#cb8-111" tabindex="-1"></a></span>
-<span id="cb8-112"><a href="#cb8-112" tabindex="-1"></a><span class="fu">list.files</span>(paired_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-113"><a href="#cb8-113" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-114"><a href="#cb8-114" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/edges_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-115"><a href="#cb8-115" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/edges_4_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-116"><a href="#cb8-116" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;</span></span>
-<span id="cb8-117"><a href="#cb8-117" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-118"><a href="#cb8-118" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/nodes_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-119"><a href="#cb8-119" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/nodes_4_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-120"><a href="#cb8-120" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/params.csv&quot;                             </span></span>
-<span id="cb8-121"><a href="#cb8-121" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-122"><a href="#cb8-122" tabindex="-1"></a><span class="co">#&gt; [10] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-123"><a href="#cb8-123" tabindex="-1"></a><span class="co">#&gt; [11] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-124"><a href="#cb8-124" tabindex="-1"></a><span class="co">#&gt; [12] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-125"><a href="#cb8-125" tabindex="-1"></a><span class="co">#&gt; [13] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/edges_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-126"><a href="#cb8-126" tabindex="-1"></a><span class="co">#&gt; [14] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/edges_4_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-127"><a href="#cb8-127" tabindex="-1"></a><span class="co">#&gt; [15] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;</span></span>
-<span id="cb8-128"><a href="#cb8-128" tabindex="-1"></a><span class="co">#&gt; [16] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-129"><a href="#cb8-129" tabindex="-1"></a><span class="co">#&gt; [17] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/nodes_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-130"><a href="#cb8-130" tabindex="-1"></a><span class="co">#&gt; [18] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/nodes_4_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-131"><a href="#cb8-131" tabindex="-1"></a><span class="co">#&gt; [19] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/params.csv&quot;                             </span></span>
-<span id="cb8-132"><a href="#cb8-132" tabindex="-1"></a><span class="co">#&gt; [20] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;      </span></span>
-<span id="cb8-133"><a href="#cb8-133" tabindex="-1"></a><span class="co">#&gt; [21] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb8-134"><a href="#cb8-134" tabindex="-1"></a><span class="co">#&gt; [22] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b10/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>uka_doses <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;example_data/cdk_inhibitor_PHA-793887_all_doses.csv&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">unique</span>(uka_doses<span class="sc">$</span>Sgroup_contrast)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;0.5_T01 vs DMSO&quot; &quot;2_T01 vs DMSO&quot;   &quot;4_T01 vs DMSO&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>sens <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;example_data/sensitivity_example.csv&quot;</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>sens_nudul <span class="ot">&lt;-</span> sens[sens<span class="sc">$</span>cell_line <span class="sc">==</span> <span class="st">&quot;NUDUL1&quot;</span>, ]</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>paired_dir <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">dir.create</span>(paired_dir)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>paired_results <span class="ot">&lt;-</span> <span class="fu">run_network_grid</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fl">0.5</span>, <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">sens =</span> sens_nudul, <span class="at">sens_perc_cutoff =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>),</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">ppi_network =</span> ppi_networkv12_502_kins, <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db862661b47/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff      0.5                    </span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff      0.5                    </span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; 3 b                2                      </span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; 4 w                2                      </span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs     TRUE                   </span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network      ppi_networkv12_502_kins</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; 7 sens_perc_cutoff 0.6                    </span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; 8 uka              uka_doses              </span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; 9 sens             sens_nudul             </span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpeGB1Hf\\file2db862661b47/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; 1 spec_cutoff      0.5                    </span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; 2 perc_cutoff      0.5                    </span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; 3 b                2                      </span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; 4 w                2                      </span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs     TRUE                   </span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network      ppi_networkv12_502_kins</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; 7 sens_perc_cutoff 0.7                    </span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; 8 uka              uka_doses              </span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; 9 sens             sens_nudul             </span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  16</span></span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             19</span></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       1</span></span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  16</span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             16</span></span>
+<span id="cb9-52"><a href="#cb9-52" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       1</span></span>
+<span id="cb9-53"><a href="#cb9-53" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-54"><a href="#cb9-54" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-55"><a href="#cb9-55" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-56"><a href="#cb9-56" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-57"><a href="#cb9-57" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb9-58"><a href="#cb9-58" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 2</span></span>
+<span id="cb9-59"><a href="#cb9-59" tabindex="-1"></a><span class="co">#&gt;   type        n_nodes</span></span>
+<span id="cb9-60"><a href="#cb9-60" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;         &lt;int&gt;</span></span>
+<span id="cb9-61"><a href="#cb9-61" tabindex="-1"></a><span class="co">#&gt; 1 Kinase           18</span></span>
+<span id="cb9-62"><a href="#cb9-62" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity      20</span></span>
+<span id="cb9-63"><a href="#cb9-63" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-64"><a href="#cb9-64" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-65"><a href="#cb9-65" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-66"><a href="#cb9-66" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-67"><a href="#cb9-67" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb9-68"><a href="#cb9-68" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 2</span></span>
+<span id="cb9-69"><a href="#cb9-69" tabindex="-1"></a><span class="co">#&gt;   type        n_nodes</span></span>
+<span id="cb9-70"><a href="#cb9-70" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;         &lt;int&gt;</span></span>
+<span id="cb9-71"><a href="#cb9-71" tabindex="-1"></a><span class="co">#&gt; 1 Kinase           18</span></span>
+<span id="cb9-72"><a href="#cb9-72" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity      17</span></span>
+<span id="cb9-73"><a href="#cb9-73" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-74"><a href="#cb9-74" tabindex="-1"></a><span class="co">#&gt;   100% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-75"><a href="#cb9-75" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-76"><a href="#cb9-76" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-77"><a href="#cb9-77" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb9-78"><a href="#cb9-78" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
+<span id="cb9-79"><a href="#cb9-79" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
+<span id="cb9-80"><a href="#cb9-80" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
+<span id="cb9-81"><a href="#cb9-81" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  28</span></span>
+<span id="cb9-82"><a href="#cb9-82" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             15</span></span>
+<span id="cb9-83"><a href="#cb9-83" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       5</span></span>
+<span id="cb9-84"><a href="#cb9-84" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-85"><a href="#cb9-85" tabindex="-1"></a><span class="co">#&gt;   97.92% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-86"><a href="#cb9-86" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-87"><a href="#cb9-87" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-88"><a href="#cb9-88" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2 </span></span>
+<span id="cb9-89"><a href="#cb9-89" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 2</span></span>
+<span id="cb9-90"><a href="#cb9-90" tabindex="-1"></a><span class="co">#&gt;   type               n_nodes</span></span>
+<span id="cb9-91"><a href="#cb9-91" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;int&gt;</span></span>
+<span id="cb9-92"><a href="#cb9-92" tabindex="-1"></a><span class="co">#&gt; 1 Kinase                  29</span></span>
+<span id="cb9-93"><a href="#cb9-93" tabindex="-1"></a><span class="co">#&gt; 2 Sensitivity             13</span></span>
+<span id="cb9-94"><a href="#cb9-94" tabindex="-1"></a><span class="co">#&gt; 3 Sensitivity-Kinase       4</span></span>
+<span id="cb9-95"><a href="#cb9-95" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Using fast kinograte...&quot;</span></span>
+<span id="cb9-96"><a href="#cb9-96" tabindex="-1"></a><span class="co">#&gt;   97.83% of your terminal nodes are included in the interactome</span></span>
+<span id="cb9-97"><a href="#cb9-97" tabindex="-1"></a><span class="co">#&gt;   Solving the PCSF by adding random noise to the edge costs...</span></span>
+<span id="cb9-98"><a href="#cb9-98" tabindex="-1"></a><span class="co">#&gt; Run 1 of 2 </span></span>
+<span id="cb9-99"><a href="#cb9-99" tabindex="-1"></a><span class="co">#&gt; Run 2 of 2</span></span>
+<span id="cb9-100"><a href="#cb9-100" tabindex="-1"></a></span>
+<span id="cb9-101"><a href="#cb9-101" tabindex="-1"></a><span class="cf">for</span> (item <span class="cf">in</span> paired_results) {</span>
+<span id="cb9-102"><a href="#cb9-102" tabindex="-1"></a>  <span class="fu">cat</span>(item<span class="sc">$</span>meta<span class="sc">$</span>condition, <span class="st">&quot;| sens_perc_cutoff =&quot;</span>, item<span class="sc">$</span>meta<span class="sc">$</span>sens_perc_cutoff, <span class="st">&quot;: &quot;</span>,</span>
+<span id="cb9-103"><a href="#cb9-103" tabindex="-1"></a>    <span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>nodes), <span class="st">&quot; nodes, &quot;</span>, <span class="fu">nrow</span>(item<span class="sc">$</span>result<span class="sc">$</span>edges), <span class="st">&quot; edges</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb9-104"><a href="#cb9-104" tabindex="-1"></a>    <span class="at">sep =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb9-105"><a href="#cb9-105" tabindex="-1"></a>  )</span>
+<span id="cb9-106"><a href="#cb9-106" tabindex="-1"></a>}</span>
+<span id="cb9-107"><a href="#cb9-107" tabindex="-1"></a><span class="co">#&gt; 0.5_T01 vs DMSO| sens_perc_cutoff =0.6: 46 nodes, 46 edges</span></span>
+<span id="cb9-108"><a href="#cb9-108" tabindex="-1"></a><span class="co">#&gt; 0.5_T01 vs DMSO| sens_perc_cutoff =0.7: 41 nodes, 43 edges</span></span>
+<span id="cb9-109"><a href="#cb9-109" tabindex="-1"></a><span class="co">#&gt; 2_T01 vs DMSO| sens_perc_cutoff =0.6: 51 nodes, 53 edges</span></span>
+<span id="cb9-110"><a href="#cb9-110" tabindex="-1"></a><span class="co">#&gt; 2_T01 vs DMSO| sens_perc_cutoff =0.7: 48 nodes, 49 edges</span></span>
+<span id="cb9-111"><a href="#cb9-111" tabindex="-1"></a><span class="co">#&gt; 4_T01 vs DMSO| sens_perc_cutoff =0.6: 62 nodes, 65 edges</span></span>
+<span id="cb9-112"><a href="#cb9-112" tabindex="-1"></a><span class="co">#&gt; 4_T01 vs DMSO| sens_perc_cutoff =0.7: 60 nodes, 64 edges</span></span>
+<span id="cb9-113"><a href="#cb9-113" tabindex="-1"></a></span>
+<span id="cb9-114"><a href="#cb9-114" tabindex="-1"></a><span class="fu">list.files</span>(paired_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-115"><a href="#cb9-115" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-116"><a href="#cb9-116" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-117"><a href="#cb9-117" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-118"><a href="#cb9-118" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
+<span id="cb9-119"><a href="#cb9-119" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-120"><a href="#cb9-120" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-121"><a href="#cb9-121" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-122"><a href="#cb9-122" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
+<span id="cb9-123"><a href="#cb9-123" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-124"><a href="#cb9-124" tabindex="-1"></a><span class="co">#&gt; [10] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-125"><a href="#cb9-125" tabindex="-1"></a><span class="co">#&gt; [11] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-126"><a href="#cb9-126" tabindex="-1"></a><span class="co">#&gt; [12] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-127"><a href="#cb9-127" tabindex="-1"></a><span class="co">#&gt; [13] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-128"><a href="#cb9-128" tabindex="-1"></a><span class="co">#&gt; [14] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-129"><a href="#cb9-129" tabindex="-1"></a><span class="co">#&gt; [15] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;</span></span>
+<span id="cb9-130"><a href="#cb9-130" tabindex="-1"></a><span class="co">#&gt; [16] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
+<span id="cb9-131"><a href="#cb9-131" tabindex="-1"></a><span class="co">#&gt; [17] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-132"><a href="#cb9-132" tabindex="-1"></a><span class="co">#&gt; [18] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-133"><a href="#cb9-133" tabindex="-1"></a><span class="co">#&gt; [19] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-134"><a href="#cb9-134" tabindex="-1"></a><span class="co">#&gt; [20] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
+<span id="cb9-135"><a href="#cb9-135" tabindex="-1"></a><span class="co">#&gt; [21] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-136"><a href="#cb9-136" tabindex="-1"></a><span class="co">#&gt; [22] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-137"><a href="#cb9-137" tabindex="-1"></a><span class="co">#&gt; [23] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;</span></span></code></pre></div>
 <p>The folder additionally nests under a <code>uka</code>-named
 subfolder (since output there depends on both <code>uka</code> and
 <code>sens</code>), with one subfolder per distinct
@@ -826,13 +853,13 @@ value in this example).</p>
 <code>max_tasks</code> (default 500) networks without an explicit
 override – a check against an accidentally huge overnight run, not a
 time estimate:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">run_network_grid</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">seq</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="at">by =</span> <span class="fl">0.1</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.7</span>, <span class="at">b =</span> <span class="dv">10</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">FALSE</span>, <span class="at">max_tasks =</span> <span class="dv">5</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>)</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; ! run_network_grid() would build 27 networks (dataset x condition x spec_cutoff x perc_cutoff x b x rank_uka_abs x ppi_network), over max_tasks = 5. Review the grid before proceeding -- narrow the grid, or pass a higher max_tasks explicitly if this size is actually intended.</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">run_network_grid</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  uka_doses, <span class="at">condition_col =</span> <span class="st">&quot;Sgroup_contrast&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">seq</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="at">by =</span> <span class="fl">0.1</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.7</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">FALSE</span>, <span class="at">max_tasks =</span> <span class="dv">5</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; ! run_network_grid() would build 27 networks (dataset x condition x spec_cutoff x perc_cutoff x b x w x rank_uka_abs x ppi_network), over max_tasks = 5. Review the grid before proceeding -- narrow the grid, or pass a higher max_tasks explicitly if this size is actually intended.</span></span></code></pre></div>
 </div>
 <div id="parallel-vs.-sequential-execution" class="section level3">
 <h3>Parallel vs. sequential execution</h3>
@@ -843,11 +870,11 @@ parallelize across the whole grid, set a plan <strong>once</strong>,
 before any <code>run_network_grid()</code> call in the session (not per
 call – worker startup, including loading <code>PCSF</code>’s compiled
 code in each worker, has real cost, so it’s not worth repeating):</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>multisession, <span class="at">workers =</span> <span class="dv">4</span>) <span class="co"># local parallel workers</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>multisession, <span class="at">workers =</span> <span class="dv">4</span>) <span class="co"># local parallel workers</span></span></code></pre></div>
 <p>Every <code>run_network_grid()</code> call for the rest of the
 session now runs in parallel automatically – nothing else about the call
 changes. To go back to sequential:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span></code></pre></div>
 <p>Persisted output is the
 <code>nodes</code>/<code>edges</code>/<code>wc_df</code> CSVs written
 above, plus <code>params.csv</code> – that’s what

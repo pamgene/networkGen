@@ -47,7 +47,7 @@ test_that("build_network_grid splits by dataset when a dataset column is present
 test_that("run_network_grid builds one task per grid cell, kinase-only when sens is NULL", {
   future::plan(future::sequential)
   local_mocked_bindings(
-    generate_kinase_network = function(uka, condition, spec_cutoff, b, ppi_network, write) {
+    generate_kinase_network = function(uka, condition, spec_cutoff, b, w, ppi_network, write) {
       list(condition = condition, spec_cutoff = spec_cutoff, n_terminals = nrow(uka))
     }
   )
@@ -73,7 +73,7 @@ test_that("run_network_grid reuses one sens profile across every condition, per 
   future::plan(future::sequential)
   captured_sens <- list()
   local_mocked_bindings(
-    generate_paired_network = function(uka, sens, condition, spec_cutoff, b, ppi_network, write) {
+    generate_paired_network = function(uka, sens, condition, spec_cutoff, b, w, ppi_network, write) {
       captured_sens[[condition]] <<- sens
       list(condition = condition)
     }
@@ -102,7 +102,7 @@ test_that("run_network_grid grids sens_perc_cutoff independently of every uka-si
   future::plan(future::sequential)
   captured_sens_names <- list()
   local_mocked_bindings(
-    generate_paired_network = function(uka, sens, condition, spec_cutoff, b, ppi_network, write) {
+    generate_paired_network = function(uka, sens, condition, spec_cutoff, b, w, ppi_network, write) {
       captured_sens_names[[length(captured_sens_names) + 1]] <<- sens$name
       list(condition = condition)
     }

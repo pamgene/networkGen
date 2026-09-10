@@ -48,16 +48,18 @@ call_sr <- function(from, to, cost, node_names, node_prizes) {
 #'   lowered for faster iteration while developing/testing. Default 8.
 #' @param r Fraction of random noise added to each edge cost per run (0-1),
 #'   used to build the `n`-run consensus (see `n`). Default 0.1.
-#' @param w The fixed cost of connecting one terminal node to the network's
-#'   root -- effectively the "entry price" a terminal's prize (`b * prize`)
-#'   must clear before it's worth including in the network at all. Trades off
-#'   directly against `b`: raising `w` (or lowering `b`) makes the algorithm
-#'   more willing to leave terminals out rather than pay to connect them.
-#'   Default 2.
-#' @param b Multiplier applied to terminal-node prizes before they're weighed
-#'   against `w` (the cost of including a terminal at all). If no terminal's
-#'   `b * prize` exceeds `w`, PCSF finds no subnetwork worth building --
-#'   raise `b` (or lower `w`) if that happens. Default 1.
+#' @param w The cost of connecting a terminal node straight to an artificial
+#'   root, i.e. the price of "parking" a terminal on its own rather than
+#'   reaching it through the network. Low `w` lets isolated terminals in
+#'   cheaply (more, smaller fragments); high `w` means a terminal is only
+#'   worth keeping if the network already passes near it (fewer, more
+#'   connected components -- isolated terminals get dropped). A lone
+#'   terminal survives when `b * prize > w`. Default 2 (PCSF's own default).
+#' @param b Multiplier applied to every node prize. Raising `b` makes prizes
+#'   outweigh edge costs, so more input nodes -- and more connecting
+#'   (Steiner) nodes -- get pulled in: a bigger network. It also rescues
+#'   lone terminals, since `b * prize > w` is their break-even. If PCSF
+#'   finds no subnetwork worth building, raise `b` (or lower `w`). Default 2.
 #' @param mu Hub-penalization strength: non-terminal (Steiner) nodes are
 #'   penalized by `mu * their degree in the interactome`, discouraging the
 #'   algorithm from routing through very high-degree "hub" genes just because
@@ -69,7 +71,7 @@ call_sr <- function(from, to, cost, node_names, node_prizes) {
 #'   data frame), `nodes` (name/prize/type data frame), and `n_runs`.
 #' @export
 PCSF_rand_pg <- function(edges_df, terminals, n = 8, r = 0.1,
-                          w = 2, b = 1, mu = 0.0005, dummies = NULL) {
+                          w = 2, b = 2, mu = 0.0005, dummies = NULL) {
   if (missing(edges_df)) {
     stop("Need to specify edge dataframe with columns: head, tail, cost")
   }
@@ -253,7 +255,7 @@ PCSF_rand_pg <- function(edges_df, terminals, n = 8, r = 0.1,
 #'   (data frames), `wc_df` (if `cluster = TRUE`), `maintitle`. `NULL` if PCSF
 #'   fails to find a subnetwork.
 #' @export
-kinograte_pg_pcsf <- function(df, ppi_network, maintitle, n = 8, w = 10, r = 0.1, b = 1.5,
+kinograte_pg_pcsf <- function(df, ppi_network, maintitle, n = 8, w = 2, r = 0.1, b = 2,
                                mu = 0.005, cluster = TRUE, seed = NULL, res.path, spec_cutoff,
                                condition, write) {
   print("Using fast kinograte...")

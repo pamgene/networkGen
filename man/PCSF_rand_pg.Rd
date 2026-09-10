@@ -10,7 +10,7 @@ PCSF_rand_pg(
   n = 8,
   r = 0.1,
   w = 2,
-  b = 1,
+  b = 2,
   mu = 5e-04,
   dummies = NULL
 )
@@ -30,17 +30,19 @@ lowered for faster iteration while developing/testing. Default 8.}
 \item{r}{Fraction of random noise added to each edge cost per run (0-1),
 used to build the \code{n}-run consensus (see \code{n}). Default 0.1.}
 
-\item{w}{The fixed cost of connecting one terminal node to the network's
-root -- effectively the "entry price" a terminal's prize (\code{b * prize})
-must clear before it's worth including in the network at all. Trades off
-directly against \code{b}: raising \code{w} (or lowering \code{b}) makes the algorithm
-more willing to leave terminals out rather than pay to connect them.
-Default 2.}
+\item{w}{The cost of connecting a terminal node straight to an artificial
+root, i.e. the price of "parking" a terminal on its own rather than
+reaching it through the network. Low \code{w} lets isolated terminals in
+cheaply (more, smaller fragments); high \code{w} means a terminal is only
+worth keeping if the network already passes near it (fewer, more
+connected components -- isolated terminals get dropped). A lone
+terminal survives when \code{b * prize > w}. Default 2 (PCSF's own default).}
 
-\item{b}{Multiplier applied to terminal-node prizes before they're weighed
-against \code{w} (the cost of including a terminal at all). If no terminal's
-\code{b * prize} exceeds \code{w}, PCSF finds no subnetwork worth building --
-raise \code{b} (or lower \code{w}) if that happens. Default 1.}
+\item{b}{Multiplier applied to every node prize. Raising \code{b} makes prizes
+outweigh edge costs, so more input nodes -- and more connecting
+(Steiner) nodes -- get pulled in: a bigger network. It also rescues
+lone terminals, since \code{b * prize > w} is their break-even. If PCSF
+finds no subnetwork worth building, raise \code{b} (or lower \code{w}). Default 2.}
 
 \item{mu}{Hub-penalization strength: non-terminal (Steiner) nodes are
 penalized by \verb{mu * their degree in the interactome}, discouraging the

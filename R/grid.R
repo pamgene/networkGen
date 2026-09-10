@@ -31,13 +31,13 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 
 #' Expand a parameter grid into a flat list of per-network build inputs
 #'
-#' The one place `dataset x condition x spec_cutoff x perc_cutoff x b x
+#' The one place `dataset x condition x spec_cutoff x perc_cutoff x b x w x
 #' rank_uka_abs x ppi_network` gets expanded -- both [run_network_grid()]
 #' (plain generation) and `networkScore`'s scoring entry points build on
 #' this, so there is exactly one grid-construction mechanism in the whole
 #' suite (see `docs/adr/0006-unified-grid-interface.md`). Pure: no
 #' filesystem access, no network builds -- just data in, a flat list of
-#' resolved cells out. Every one of `spec_cutoff`, `perc_cutoff`, `b`,
+#' resolved cells out. Every one of `spec_cutoff`, `perc_cutoff`, `b`, `w`,
 #' `rank_uka_abs`, `ppi_network` can be a vector (or, for `ppi_network`, a
 #' named list) -- every combination is gridded, not just the ones a
 #' particular caller happens to demonstrate.
@@ -55,12 +55,14 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #' @param condition_col Name of the column identifying each condition in
 #'   `clean_fn`'s output (e.g. `"Sgroup_contrast"`, `"Sample"`, `"cell_line"`
 #'   -- differs by which cleaning convention `clean_fn` uses).
-#' @param spec_cutoff,perc_cutoff,b,rank_uka_abs Vectors -- every combination
-#'   is gridded, not just paired elementwise. `spec_cutoff`/`perc_cutoff`
-#'   are passed to [uka_top()] (which also determines `uka_filt`);
-#'   `rank_uka_abs` too. `b` doesn't affect filtering, only the later PCSF
-#'   build, but is gridded here alongside the others for one uniform
-#'   mechanism rather than a second, separate expansion step.
+#' @param spec_cutoff,perc_cutoff,b,w,rank_uka_abs Vectors -- every
+#'   combination is gridded, not just paired elementwise. `spec_cutoff`/
+#'   `perc_cutoff` are passed to [uka_top()] (which also determines
+#'   `uka_filt`); `rank_uka_abs` too. `b` and `w` don't affect filtering,
+#'   only the later PCSF build (see [generate_kinase_network()] for what
+#'   they do), but are gridded here alongside the others for one uniform
+#'   mechanism rather than a second, separate expansion step. `b`/`w`
+#'   default to `2` (see [PCSF_rand_pg()]).
 #' @param ppi_network A data frame with columns `head`, `tail`, `cost`, or a
 #'   fully named list of them (e.g. `list(v12 = ppi_networkv12, kins502 =
 #'   ppi_networkv12_502_kins)`) to grid across more than one reference
@@ -69,15 +71,15 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   `raw_uka`. Default `"dataset"`.
 #'
 #' @return A list, one element per `(dataset, condition, spec_cutoff,
-#'   perc_cutoff, b, rank_uka_abs, ppi_network)` combination, each a list
-#'   with `dataset`, `condition`, `spec_cutoff`, `perc_cutoff`, `b`,
+#'   perc_cutoff, b, w, rank_uka_abs, ppi_network)` combination, each a list
+#'   with `dataset`, `condition`, `spec_cutoff`, `perc_cutoff`, `b`, `w`,
 #'   `rank_uka_abs`, `ppi_network_name`, `ppi_network` (the actual data
 #'   frame for that name), `uka_filt` (top-hit terminal-node data frame,
 #'   from [uka_top()]), `uka_cell_all` (that condition's full, unfiltered
 #'   rows -- for permutation building).
 #' @export
 build_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
-                                spec_cutoff, perc_cutoff, b, rank_uka_abs = TRUE,
+                                spec_cutoff, perc_cutoff, b = 2, w = 2, rank_uka_abs = TRUE,
                                 ppi_network = ppi_networkv12, dataset_col = "dataset") {
   ppi_label <- rlang::as_label(rlang::enquo(ppi_network))
   ppi_list <- normalize_ppi_network_list(ppi_network, ppi_label)
@@ -95,15 +97,15 @@ build_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
     conditions <- unique(cleaned[[condition_col]])
     combos <- tidyr::expand_grid(
       condition = conditions, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff,
-      b = b, rank_uka_abs = rank_uka_abs, ppi_network_name = names(ppi_list)
+      b = b, w = w, rank_uka_abs = rank_uka_abs, ppi_network_name = names(ppi_list)
     )
 
-    purrr::pmap(combos, function(condition, spec_cutoff, perc_cutoff, b, rank_uka_abs, ppi_network_name) {
+    purrr::pmap(combos, function(condition, spec_cutoff, perc_cutoff, b, w, rank_uka_abs, ppi_network_name) {
       uka_cell_all <- cleaned[cleaned[[condition_col]] == condition, ]
       uka_filt <- uka_top(uka_cell_all, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, rank_uka_abs = rank_uka_abs)
       list(
         dataset = ds_name, condition = condition, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff,
-        b = b, rank_uka_abs = rank_uka_abs, ppi_network_name = ppi_network_name,
+        b = b, w = w, rank_uka_abs = rank_uka_abs, ppi_network_name = ppi_network_name,
         ppi_network = ppi_list[[ppi_network_name]], uka_filt = uka_filt, uka_cell_all = uka_cell_all
       )
     })
@@ -116,7 +118,7 @@ build_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
 #'
 #' Shared by [run_network_grid()] and `networkScore`'s scoring entry points
 #' -- the one place "one [prepare_run_params()] folder per distinct
-#' `(spec_cutoff, perc_cutoff, b, rank_uka_abs, ppi_network)` combination,
+#' `(spec_cutoff, perc_cutoff, b, w, rank_uka_abs, ppi_network)` combination,
 #' given a grid" gets implemented, so it isn't duplicated between plain
 #' generation and scoring.
 #'
@@ -146,7 +148,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
   # key and forwarded to prepare_fn() whenever it's there, without this
   # shared function needing to know what it means.
   combo_key_of <- function(cell) {
-    parts <- c(cell$spec_cutoff, cell$perc_cutoff, cell$b, cell$rank_uka_abs, cell$ppi_network_name)
+    parts <- c(cell$spec_cutoff, cell$perc_cutoff, cell$b, cell$w, cell$rank_uka_abs, cell$ppi_network_name)
     if (!is.null(cell$sens_perc_cutoff)) parts <- c(parts, cell$sens_perc_cutoff)
     paste(parts, collapse = "||")
   }
@@ -159,7 +161,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
     do.call(prepare_fn, c(
       list(
         spec_cutoff = cell$spec_cutoff, perc_cutoff = cell$perc_cutoff,
-        b = cell$b, rank_uka_abs = cell$rank_uka_abs, ppi_network = cell$ppi_network,
+        b = cell$b, w = cell$w, rank_uka_abs = cell$rank_uka_abs, ppi_network = cell$ppi_network,
         .labels = cell_labels
       ),
       extra_args,
@@ -176,7 +178,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 #' Build every network in a parameter grid, in one flattened batch
 #'
 #' The unified entry point for plain (non-scoring) generation across a
-#' `dataset x condition x spec_cutoff x perc_cutoff x b x rank_uka_abs x
+#' `dataset x condition x spec_cutoff x perc_cutoff x b x w x rank_uka_abs x
 #' ppi_network` grid -- the caller specifies the grid, not loops. Replaces
 #' `generate_networks_for_conditions()` (removed -- see
 #' `docs/adr/0006-unified-grid-interface.md`): the single-file,
@@ -217,11 +219,11 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 #'
 #' @return Same shape as [generate_networks_batch()]: a list, one element
 #'   per grid cell, each with `result` and `meta` (`dataset`, `condition`,
-#'   `spec_cutoff`, `perc_cutoff`, `b`, `rank_uka_abs`, `ppi_network_name`,
-#'   and, for the paired path, `sens_perc_cutoff`).
+#'   `spec_cutoff`, `perc_cutoff`, `b`, `w`, `rank_uka_abs`,
+#'   `ppi_network_name`, and, for the paired path, `sens_perc_cutoff`).
 #' @export
 run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
-                              spec_cutoff, perc_cutoff, b, ppi_network = ppi_networkv12,
+                              spec_cutoff, perc_cutoff, b = 2, w = 2, ppi_network = ppi_networkv12,
                               rank_uka_abs = TRUE, dataset_col = "dataset",
                               sens = NULL, sens_perc_cutoff = NULL, sens_balance = TRUE,
                               respath, write = TRUE, max_tasks = 500, ...) {
@@ -253,7 +255,7 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
 
   uka_grid <- build_network_grid(
     raw_uka, clean_fn = clean_fn, condition_col = condition_col,
-    spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, b = b,
+    spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, b = b, w = w,
     rank_uka_abs = rank_uka_abs, ppi_network = ppi_list, dataset_col = dataset_col
   )
 
@@ -282,7 +284,7 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
   if (length(grid) > max_tasks) {
     stop(
       "run_network_grid() would build ", length(grid), " networks (dataset x condition x ",
-      "spec_cutoff x perc_cutoff x b x rank_uka_abs x ppi_network",
+      "spec_cutoff x perc_cutoff x b x w x rank_uka_abs x ppi_network",
       if (paired) " x sens_perc_cutoff",
       "), over max_tasks = ", max_tasks,
       ". Review the grid before proceeding -- narrow the grid, or pass a higher max_tasks ",
@@ -308,13 +310,13 @@ run_network_grid <- function(raw_uka, clean_fn = identity, condition_col,
     cell <- grid[[i]]
     args <- list(
       uka = cell$uka_filt, condition = cell$condition, spec_cutoff = cell$spec_cutoff,
-      b = cell$b, ppi_network = cell$ppi_network, write = write, ...
+      b = cell$b, w = cell$w, ppi_network = cell$ppi_network, write = write, ...
     )
     if (write) args$res.path <- combos$folders[[combos$combo_key[i]]]
     if (paired) args$sens <- cell$sens_filt
     meta <- list(
       dataset = cell$dataset, condition = cell$condition, spec_cutoff = cell$spec_cutoff,
-      perc_cutoff = cell$perc_cutoff, b = cell$b, rank_uka_abs = cell$rank_uka_abs,
+      perc_cutoff = cell$perc_cutoff, b = cell$b, w = cell$w, rank_uka_abs = cell$rank_uka_abs,
       ppi_network_name = cell$ppi_network_name
     )
     if (paired) meta$sens_perc_cutoff <- cell$sens_perc_cutoff

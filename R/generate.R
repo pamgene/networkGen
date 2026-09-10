@@ -52,7 +52,10 @@ new_network_result <- function(raw, params) {
 #'   [ppi_networkv12_filt] or [ppi_networkv12_502_kins], to use another one).
 #' @param spec_cutoff Specificity cutoff, recorded in `maintitle`/output file
 #'   names.
-#' @param b PCSF terminal-prize weight. See [PCSF_rand_pg()].
+#' @param b,w The two main PCSF cost knobs -- `b` multiplies node prizes
+#'   (higher `b` = bigger network), `w` is the cost of connecting a terminal
+#'   straight to the root (higher `w` = isolated terminals dropped). See
+#'   [PCSF_rand_pg()] for the full picture. Both default 2.
 #' @param condition Condition/comparison label, recorded in `maintitle`/output
 #'   file names.
 #' @param res.path Output folder, used only when `write = TRUE`.
@@ -61,12 +64,12 @@ new_network_result <- function(raw, params) {
 #'   `LogFC` values (prize fixed at 1, type `"Artificial"`).
 #' @param write If `TRUE`, write `nodes_*.csv`/`missing_nodes_*.csv` to
 #'   `res.path`. Default `FALSE`.
-#' @param ... Passed through to [PCSF_rand_pg()] (`n`, `w`, `r`, `mu`, `seed`).
+#' @param ... Passed through to [PCSF_rand_pg()] (`n`, `r`, `mu`, `seed`).
 #'
 #' @return A `"networkGen_result"` object (see [new_network_result()]), or
 #'   `NULL` if PCSF could not find a subnetwork for these inputs.
 #' @export
-generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spec_cutoff, b,
+generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spec_cutoff, b = 2, w = 2,
                                      condition = NULL, res.path = NULL,
                                      art_nodes = NULL, art_lfc = NULL,
                                      write = FALSE, ...) {
@@ -93,11 +96,11 @@ generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spe
 
   raw <- kinograte_pg_pcsf(
     df = combined_df, ppi_network = ppi_network, spec_cutoff = spec_cutoff,
-    res.path = res.path, condition = condition, cluster = TRUE, b = b, write = write, ...
+    res.path = res.path, condition = condition, cluster = TRUE, b = b, w = w, write = write, ...
   )
 
   new_network_result(raw, params = list(
-    spec_cutoff = spec_cutoff, b = b, condition = condition
+    spec_cutoff = spec_cutoff, b = b, w = w, condition = condition
   ))
 }
 
@@ -116,7 +119,7 @@ generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spe
 #' @return A `"networkGen_result"` object (see [new_network_result()]), or
 #'   `NULL` if PCSF could not find a subnetwork for these inputs.
 #' @export
-generate_kinase_network <- function(uka, ppi_network = ppi_networkv12, spec_cutoff, b,
+generate_kinase_network <- function(uka, ppi_network = ppi_networkv12, spec_cutoff, b = 2, w = 2,
                                      condition = NULL, res.path = NULL,
                                      art_nodes = NULL, art_lfc = NULL,
                                      write = FALSE, ...) {
@@ -129,7 +132,7 @@ generate_kinase_network <- function(uka, ppi_network = ppi_networkv12, spec_cuto
     {
       kinograte_pg_pcsf(
         df = uka, ppi_network = ppi_network, spec_cutoff = spec_cutoff,
-        res.path = res.path, condition = condition, cluster = TRUE, b = b, write = write, ...
+        res.path = res.path, condition = condition, cluster = TRUE, b = b, w = w, write = write, ...
       )
     },
     error = function(e) {
@@ -139,6 +142,6 @@ generate_kinase_network <- function(uka, ppi_network = ppi_networkv12, spec_cuto
   )
 
   new_network_result(raw, params = list(
-    spec_cutoff = spec_cutoff, b = b, condition = condition
+    spec_cutoff = spec_cutoff, b = b, w = w, condition = condition
   ))
 }

@@ -10,7 +10,8 @@ run_network_grid(
   condition_col,
   spec_cutoff,
   perc_cutoff,
-  b,
+  b = 2,
+  w = 2,
   ppi_network = ppi_networkv12,
   rank_uka_abs = TRUE,
   dataset_col = "dataset",
@@ -40,12 +41,14 @@ Default \code{identity}: \code{raw_uka} is already cleaned.}
 \code{clean_fn}'s output (e.g. \code{"Sgroup_contrast"}, \code{"Sample"}, \code{"cell_line"}
 -- differs by which cleaning convention \code{clean_fn} uses).}
 
-\item{spec_cutoff, perc_cutoff, b, rank_uka_abs}{Vectors -- every combination
-is gridded, not just paired elementwise. \code{spec_cutoff}/\code{perc_cutoff}
-are passed to \code{\link[=uka_top]{uka_top()}} (which also determines \code{uka_filt});
-\code{rank_uka_abs} too. \code{b} doesn't affect filtering, only the later PCSF
-build, but is gridded here alongside the others for one uniform
-mechanism rather than a second, separate expansion step.}
+\item{spec_cutoff, perc_cutoff, b, w, rank_uka_abs}{Vectors -- every
+combination is gridded, not just paired elementwise. \code{spec_cutoff}/
+\code{perc_cutoff} are passed to \code{\link[=uka_top]{uka_top()}} (which also determines
+\code{uka_filt}); \code{rank_uka_abs} too. \code{b} and \code{w} don't affect filtering,
+only the later PCSF build (see \code{\link[=generate_kinase_network]{generate_kinase_network()}} for what
+they do), but are gridded here alongside the others for one uniform
+mechanism rather than a second, separate expansion step. \code{b}/\code{w}
+default to \code{2} (see \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}}).}
 
 \item{ppi_network}{A data frame with columns \code{head}, \code{tail}, \code{cost}, or a
 fully named list of them (e.g. \code{list(v12 = ppi_networkv12, kins502 = ppi_networkv12_502_kins)}) to grid across more than one reference
@@ -86,12 +89,12 @@ the whole grid (not gridded) -- e.g. \code{n}, \code{w}, \code{r}, \code{mu}, \c
 \value{
 Same shape as \code{\link[=generate_networks_batch]{generate_networks_batch()}}: a list, one element
 per grid cell, each with \code{result} and \code{meta} (\code{dataset}, \code{condition},
-\code{spec_cutoff}, \code{perc_cutoff}, \code{b}, \code{rank_uka_abs}, \code{ppi_network_name},
-and, for the paired path, \code{sens_perc_cutoff}).
+\code{spec_cutoff}, \code{perc_cutoff}, \code{b}, \code{w}, \code{rank_uka_abs},
+\code{ppi_network_name}, and, for the paired path, \code{sens_perc_cutoff}).
 }
 \description{
 The unified entry point for plain (non-scoring) generation across a
-\verb{dataset x condition x spec_cutoff x perc_cutoff x b x rank_uka_abs x ppi_network} grid -- the caller specifies the grid, not loops. Replaces
+\verb{dataset x condition x spec_cutoff x perc_cutoff x b x w x rank_uka_abs x ppi_network} grid -- the caller specifies the grid, not loops. Replaces
 \code{generate_networks_for_conditions()} (removed -- see
 \code{docs/adr/0006-unified-grid-interface.md}): the single-file,
 single-combination case is just this function called with length-1

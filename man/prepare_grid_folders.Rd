@@ -38,7 +38,7 @@ A list: \code{combo_key} (character vector, same length/order as
 \description{
 Shared by \code{\link[=run_network_grid]{run_network_grid()}} and \code{networkScore}'s scoring entry points
 -- the one place "one \code{\link[=prepare_run_params]{prepare_run_params()}} folder per distinct
-\verb{(spec_cutoff, perc_cutoff, b, rank_uka_abs, ppi_network)} combination,
+\verb{(spec_cutoff, perc_cutoff, b, w, rank_uka_abs, ppi_network)} combination,
 given a grid" gets implemented, so it isn't duplicated between plain
 generation and scoring.
 }

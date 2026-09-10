@@ -8,7 +8,8 @@ generate_kinase_network(
   uka,
   ppi_network = ppi_networkv12,
   spec_cutoff,
-  b,
+  b = 2,
+  w = 2,
   condition = NULL,
   res.path = NULL,
   art_nodes = NULL,
@@ -30,7 +31,10 @@ global variable -- pass a different data frame explicitly, e.g.
 \item{spec_cutoff}{Specificity cutoff, recorded in \code{maintitle}/output file
 names.}
 
-\item{b}{PCSF terminal-prize weight. See \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}}.}
+\item{b, w}{The two main PCSF cost knobs -- \code{b} multiplies node prizes
+(higher \code{b} = bigger network), \code{w} is the cost of connecting a terminal
+straight to the root (higher \code{w} = isolated terminals dropped). See
+\code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}} for the full picture. Both default 2.}
 
 \item{condition}{Condition/comparison label, recorded in \code{maintitle}/output
 file names.}
@@ -44,7 +48,7 @@ building: \code{art_nodes} is a character vector of names, \code{art_lfc} their
 \item{write}{If \code{TRUE}, write \code{nodes_*.csv}/\code{missing_nodes_*.csv} to
 \code{res.path}. Default \code{FALSE}.}
 
-\item{...}{Passed through to \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}} (\code{n}, \code{w}, \code{r}, \code{mu}, \code{seed}).}
+\item{...}{Passed through to \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}} (\code{n}, \code{r}, \code{mu}, \code{seed}).}
 }
 \value{
 A \code{"networkGen_result"} object (see \code{\link[=new_network_result]{new_network_result()}}), or

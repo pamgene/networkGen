@@ -79,7 +79,7 @@ capture_params <- function(..., .labels = list()) {
 #'   means "no filtering on this cutoff"), `perc_cutoff` (same omit-if-0
 #'   rule), `sens_perc_cutoff` (optional -- the sensitivity-side percentile
 #'   cutoff, gridded independently of `perc_cutoff`; same omit-if-0 rule),
-#'   `rank_uka_abs`, `b`, `cs` (optional), `art_nodes` (optional).
+#'   `rank_uka_abs`, `b`, `w`, `cs` (optional), `art_nodes` (optional).
 #'
 #' @return The folder name (a single path segment, or `uka_name/components`
 #'   when `sens` is present), as a string.
@@ -103,6 +103,7 @@ build_param_folder <- function(params) {
     ppi_network_name,
     paste0("ukaabs", as.integer(params$rank_uka_abs)),
     paste0("b", params$b),
+    if (!is.null(params$w)) paste0("w", params$w),
     if ("cs" %in% names(params)) paste0("cs", as.integer(params$cs)),
     if (!is.null(params$art_nodes)) "art"
   )

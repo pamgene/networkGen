@@ -129,7 +129,12 @@ test_that("generate_kinase_network works against the real bundled reference netw
   real_genes <- sample(unique(c(ppi_networkv12$head, ppi_networkv12$tail)), 15)
   uka_real <- data.frame(name = real_genes, prize = stats::runif(15, 0.5, 1), type = "Kinase", LogFC = stats::rnorm(15))
 
-  result <- generate_kinase_network(uka = uka_real, spec_cutoff = 0, b = 50, condition = "real_network_test", write = FALSE)
+  # 15 random genes aren't a biologically connected set: at the default
+  # w = 2 most get parked on the artificial root and drop out of the node
+  # list. This test is about real-scale PCSF wiring, not the defaults, so
+  # it uses b = 10, w = 10 -- high enough w that terminals must route
+  # through the network to be kept.
+  result <- generate_kinase_network(uka = uka_real, spec_cutoff = 0, b = 10, w = 10, condition = "real_network_test", write = FALSE)
 
   expect_s3_class(result, "networkGen_result")
   expect_true(all(real_genes %in% result$nodes$Protein))

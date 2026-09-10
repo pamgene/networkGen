@@ -44,7 +44,7 @@ toy_uka <- data.frame(
 ```{r toy-build}
 toy_result <- generate_kinase_network(
   uka = toy_uka, ppi_network = toy_ppi,
-  spec_cutoff = 0, b = 10, condition = "toy_example", seed = 12345, n = 2
+  spec_cutoff = 0, condition = "toy_example", seed = 12345, n = 2
 )
 cat(paste(toy_result$edges$from, "-", toy_result$edges$to), sep = "\n")
 ```
@@ -52,19 +52,40 @@ cat(paste(toy_result$edges$from, "-", toy_result$edges$to), sep = "\n")
 `A - B`, `B - D`, `D - C` -- the cheap path through `D`. `E` and `F` never
 appear.
 
-## 2. Key parameters
+## 2. How PCSF builds a network, and its two main knobs
 
-- `n` -- number of randomized PCSF runs combined into one consensus network.
-  Default 8; lowered to `n = 2` throughout this vignette for faster output.
-- `b` -- multiplier on terminal-node prizes. A terminal is only included if
-  `b * prize` exceeds `w`, the fixed cost of connecting it to the network --
-  raise `b` (or lower `w`) if PCSF reports it can't find a subnetwork. The
-  examples below use `b = 10`, well above the default of `1.5`, because this
-  vignette's prize values (percentile ranks, 0-1) times `1.5` don't clear
-  `w`'s default cost of `10` for most nodes.
-- `w`, `r`, `mu` -- less commonly tuned: `w` is the connection cost `b`
-  trades off against; `r` is the per-run random noise fraction; `mu`
-  penalizes routing through high-degree hub genes.
+PCSF (prize-collecting Steiner forest) starts from a reference network whose
+**nodes carry prizes** -- here, each input kinase's percentile rank -- and
+whose **edges carry costs**. It picks a subnetwork that trades those off,
+roughly:
+
+```
+minimize (  sum of edge costs  +  b * sum of prizes of input nodes left out  )
+```
+
+Pulling an input node in costs edge weight; leaving it out forfeits `b`
+times its prize. Two parameters set where that balance lands:
+
+- **`b`** -- multiplies every prize. Higher `b` makes leaving nodes out
+  expensive, so PCSF pulls in more input nodes **and** more connecting
+  (Steiner) nodes: a bigger network. Default `2`.
+- **`w`** -- the cost of attaching an input node straight to an artificial
+  root instead of routing to it through the network. Low `w` lets isolated
+  nodes in cheaply (they show up as tiny fragments, or drop out of the node
+  list entirely); high `w` means a node is only kept if the network already
+  runs near it -- fewer, better-connected pieces. A lone node survives only
+  when `b * prize > w`. Default `2` (PCSF's own default).
+
+If PCSF reports it can't find a subnetwork, raise `b` (or lower `w`). The
+defaults suit input node sets that are biologically related (real kinase
+hits from one comparison usually are); an unrelated set may need a larger
+`b` and `w` to knit together at all -- so this vignette leaves `b`/`w` at
+their defaults everywhere and the examples still build real networks.
+
+Less commonly tuned: `n` (randomized runs combined into one consensus
+network -- default 8, lowered to `n = 2` throughout this vignette for
+speed), `r` (per-run random noise fraction), `mu` (penalty on routing
+through high-degree hub genes).
 
 Full parameter documentation: `` ?generate_kinase_network ``.
 
@@ -85,8 +106,9 @@ head(ppi_networkv12_502_kins)
 
 `run_network_grid()` is the one entry point for this package -- one network
 or many, kinase-only or paired, one parameter combination or a whole grid of
-them. You specify the parameters to tune (e.g. cutoffs, `b`, `ppi_network`,
-which datasets) and `run_network_grid()` builds a grid of every combination.
+them. You specify the parameters to tune (e.g. cutoffs, `b`, `w`,
+`ppi_network`, which datasets) and `run_network_grid()` builds a grid of
+every combination.
 
 For each condition and parameter combination, `run_network_grid()`:
 
@@ -116,11 +138,11 @@ table(raw_multidataset$dataset, raw_multidataset$kinase_type)
 
 This is raw (not pre-cleaned) data, so `run_network_grid()` needs a
 `clean_fn` -- `Sgroup_contrast` is the condition column
-`clean_uka_to_kinograte()` produces. `spec_cutoff` **and** `b` as vectors
-grid every dataset's condition against every cutoff x `b` combination --
-3 datasets x 2 `spec_cutoff` values x 2 `b` values below, no loop written
-(`perc_cutoff` and `ppi_network` could grid the same way; kept fixed here so
-the example stays readable):
+`clean_uka_to_kinograte()` produces. `spec_cutoff` **and** `w` as vectors
+grid every dataset's condition against every cutoff x `w` combination --
+3 datasets x 2 `spec_cutoff` values x 2 `w` values below, no loop written
+(`perc_cutoff`, `b`, `rank_uka_abs` and `ppi_network` could grid the same
+way; kept at their defaults here so the example stays readable):
 
 ```{r multidataset-build}
 multidataset_dir <- tempfile()
@@ -128,13 +150,13 @@ dir.create(multidataset_dir)
 
 multidataset_results <- run_network_grid(
   raw_multidataset, clean_fn = clean_uka_to_kinograte, condition_col = "Sgroup_contrast",
-  spec_cutoff = c(1, 1.5), perc_cutoff = 0.5, b = c(10, 15), ppi_network = ppi_networkv12_502_kins,
+  spec_cutoff = c(1, 1.5), perc_cutoff = 0.5, w = c(2, 4), ppi_network = ppi_networkv12_502_kins,
   respath = multidataset_dir, write = TRUE, n = 2
 )
 
 for (item in multidataset_results) {
   cat(item$meta$dataset, "|", item$meta$condition, "| spec_cutoff =", item$meta$spec_cutoff,
-    "| b =", item$meta$b, ": ",
+    "| w =", item$meta$w, ": ",
     if (is.null(item$result)) "no subnetwork" else paste(nrow(item$result$nodes), "nodes"), "\n",
     sep = ""
   )
@@ -143,10 +165,10 @@ for (item in multidataset_results) {
 list.files(multidataset_dir, recursive = TRUE)
 ```
 
-Four folders (one per `spec_cutoff` x `b` combination), each holding all 3
+Four folders (one per `spec_cutoff` x `w` combination), each holding all 3
 datasets' `nodes`/`edges`/`wc_df` CSVs plus one shared `params.csv` -- not
-one folder per (dataset, `spec_cutoff`, `b`) combination, and not one folder
-covering multiple `spec_cutoff`/`b` values at once.
+one folder per (dataset, `spec_cutoff`, `w`) combination, and not one folder
+covering multiple `spec_cutoff`/`w` values at once.
 
 ### Paired (with sensitivity data), multiple `perc_cutoff` values on each side
 
@@ -175,7 +197,7 @@ dir.create(paired_dir)
 
 paired_results <- run_network_grid(
   uka_doses, condition_col = "Sgroup_contrast",
-  spec_cutoff = 0.5, perc_cutoff = 0.5, b = 10,
+  spec_cutoff = 0.5, perc_cutoff = 0.5,
   sens = sens_nudul, sens_perc_cutoff = c(0.6, 0.7),
   ppi_network = ppi_networkv12_502_kins, respath = paired_dir, write = TRUE, n = 2
 )
@@ -204,7 +226,7 @@ huge overnight run, not a time estimate:
 ```{r max-tasks, error = TRUE}
 run_network_grid(
   uka_doses, condition_col = "Sgroup_contrast",
-  spec_cutoff = seq(0.1, 0.9, by = 0.1), perc_cutoff = 0.7, b = 10,
+  spec_cutoff = seq(0.1, 0.9, by = 0.1), perc_cutoff = 0.7,
   respath = paired_dir, write = FALSE, max_tasks = 5
 )
 ```
