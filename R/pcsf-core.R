@@ -67,8 +67,11 @@ call_sr <- function(from, to, cost, node_names, node_prizes) {
 #' @param dummies Optional character vector of dummy-root target names;
 #'   defaults to `names(terminals)`.
 #'
-#' @return A list of class `c("PCSF_df", "list")` with `edges` (from/to/weight
-#'   data frame), `nodes` (name/prize/type data frame), and `n_runs`.
+#' @return A list of class `c("PCSF_df", "list")` with `edges` (a data
+#'   frame with columns `from`, `to`, `weight` -- the number of the `n`
+#'   runs the edge appeared in -- and `cost` -- the reference PPI's
+#'   interaction cost for that edge, carried over from `edges_df`),
+#'   `nodes` (name/prize/type data frame), and `n_runs`.
 #' @export
 PCSF_rand_pg <- function(edges_df, terminals, n = 8, r = 0.1,
                           w = 2, b = 2, mu = 0.0005, dummies = NULL) {
@@ -202,6 +205,28 @@ PCSF_rand_pg <- function(edges_df, terminals, n = 8, r = 0.1,
       stringsAsFactors = FALSE
     )
 
+    # Reattach the reference PPI's interaction cost to each selected edge.
+    # The solver returns only endpoint-name pairs, so match them back to the
+    # *simplified* interactome's costs -- the exact values the solver
+    # searched over, so any parallel-edge collapsing igraph::simplify() did
+    # is already accounted for. The match is direction-agnostic: an
+    # undirected edge is stored (A,B) here but may be (B,A) in the PPI, so
+    # both sides are keyed on the pair sorted into a fixed order
+    # (pmin = the name that sorts first, pmax = the name that sorts last).
+    ppi_key <- paste(
+      pmin(edges_simplified[, 1], edges_simplified[, 2]),
+      pmax(edges_simplified[, 1], edges_simplified[, 2]),
+      sep = "||"
+    )
+    ppi_cost <- edge_weights_simplified[!duplicated(ppi_key)]
+    names(ppi_cost) <- ppi_key[!duplicated(ppi_key)]
+    result_key <- paste(
+      pmin(result_edges$from, result_edges$to),
+      pmax(result_edges$from, result_edges$to),
+      sep = "||"
+    )
+    result_edges$cost <- unname(ppi_cost[result_key])
+
     index <- match(node_names_out, node_names_out)
     result_nodes <- data.frame(
       name = node_names_out,
@@ -258,7 +283,7 @@ PCSF_rand_pg <- function(edges_df, terminals, n = 8, r = 0.1,
 kinograte_pg_pcsf <- function(df, ppi_network, maintitle, n = 8, w = 2, r = 0.1, b = 2,
                                mu = 0.005, cluster = TRUE, seed = NULL, res.path, spec_cutoff,
                                condition, write) {
-  print("Using fast kinograte...")
+  print("Building PCSF network...")
   maintitle <- paste0(
     condition, " - Network with specificity cutoff = ",
     spec_cutoff, ", Number of nodes = ", nrow(df)

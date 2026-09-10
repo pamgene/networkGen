@@ -53,8 +53,11 @@ they happen to connect to many things. Default 0.0005.}
 defaults to \code{names(terminals)}.}
 }
 \value{
-A list of class \code{c("PCSF_df", "list")} with \code{edges} (from/to/weight
-data frame), \code{nodes} (name/prize/type data frame), and \code{n_runs}.
+A list of class \code{c("PCSF_df", "list")} with \code{edges} (a data
+frame with columns \code{from}, \code{to}, \code{weight} -- the number of the \code{n}
+runs the edge appeared in -- and \code{cost} -- the reference PPI's
+interaction cost for that edge, carried over from \code{edges_df}),
+\code{nodes} (name/prize/type data frame), and \code{n_runs}.
 }
 \description{
 Runs the prize-collecting Steiner forest algorithm \code{n} times, each time

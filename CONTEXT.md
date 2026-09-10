@@ -25,6 +25,14 @@ The numeric weight PCSF assigns a terminal node, driving how strongly the
 algorithm wants to include it in the output network.
 _Avoid_: weight (ambiguous with edge weight/cost)
 
+**Edge cost / edge weight** (the two numeric columns on a result's `edges`):
+`cost` is the reference PPI's interaction cost for that edge (lower = a
+stronger/more confident interaction), carried straight over from the input
+PPI network. `weight` is the number of the `n` randomized PCSF runs the
+edge survived in (1..`n`) — a robustness count, not a biological quantity;
+it's what the community-detection step weights by. Keep the two names
+distinct; never call either one just "weight" unqualified.
+
 **Percentile score**:
 A node's percentile rank (0–1) on its input metric (e.g. absolute LogFC),
 used via a cutoff to decide which nodes become terminals. Renamed from the

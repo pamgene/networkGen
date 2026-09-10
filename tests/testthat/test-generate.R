@@ -74,6 +74,33 @@ test_that("generate_kinase_network builds a real network end-to-end (needs real 
   expect_true(all(c("nodes", "edges", "wc_df", "maintitle", "params") %in% names(result)))
 })
 
+test_that("result edges carry the reference PPI's cost, matched regardless of edge orientation (needs real PCSF)", {
+  skip_if_not(pcsf_functional(), "real PCSF compiled package not installed in this dev environment")
+
+  # Distinct per-edge costs so a wrong match would show up as a wrong value,
+  # not just coincidentally equal. PCSF's output edge orientation is
+  # arbitrary, so some result edges will be (tail, head) relative to this
+  # table -- the cost lookup must still find them.
+  ppi <- data.frame(
+    head = c("A", "B", "D", "B", "E", "F"),
+    tail = c("B", "D", "C", "E", "F", "C"),
+    cost = c(0.11, 0.22, 0.33, 0.44, 0.55, 0.66)
+  )
+  uka <- data.frame(name = c("A", "B", "C"), prize = c(0.9, 0.9, 0.9), type = "Kinase", LogFC = c(1, 1, 1))
+
+  result <- generate_kinase_network(
+    uka = uka, ppi_network = ppi, spec_cutoff = 0, b = 10,
+    condition = "cost_test", write = FALSE, seed = 12345
+  )
+
+  expect_true("cost" %in% colnames(result$edges))
+  expect_false(anyNA(result$edges$cost))
+
+  key <- function(a, b) paste(pmin(a, b), pmax(a, b))
+  want <- stats::setNames(ppi$cost, key(ppi$head, ppi$tail))
+  expect_equal(unname(result$edges$cost), unname(want[key(result$edges$from, result$edges$to)]))
+})
+
 test_that("generate_paired_network builds a real network end-to-end (needs real PCSF)", {
   skip_if_not(pcsf_functional(), "real PCSF compiled package not installed in this dev environment")
 
