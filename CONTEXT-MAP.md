@@ -23,12 +23,13 @@ here or in `docs/adr/` may be substantively about a different package (e.g.
 - [networkScore](../networkScore/CONTEXT.md) — computes golden score
   (paired kinase+sensitivity) and kinase-only score via permutation
   testing. *(built)*
-- networkPlot — pathway enrichment of a generated network (Enrichr →
-  Reactome/KEGG/WikiPathways, with Reactome-hierarchy collapsing and
-  cross-comparison reconciliation) **and** every rendering of it: the
-  interactive visNetwork HTML and the kinase×pathway heatmaps. Works on
-  un-enriched networks too (enrichment is a separate, skippable call).
-  *(designed, not yet built — see `docs/plans/networkplot-package.md`)*
+- [networkPlot](../networkPlot/README.md) — pathway enrichment of a
+  generated network (Enrichr → Reactome/KEGG/WikiPathways, with
+  Reactome-hierarchy collapsing and cross-comparison reconciliation)
+  **and** every rendering of it: the interactive visNetwork HTML and the
+  kinase×pathway heatmaps. Works on un-enriched networks too (enrichment is
+  a separate, skippable call). *(built — see
+  `docs/plans/networkplot-package.md` for the design)*
 
 ## Relationships
 
@@ -42,9 +43,12 @@ here or in `docs/adr/` may be substantively about a different package (e.g.
   explicit pathway reference tables for the enrichment step. No dependency
   in the other direction, and none on `networkScore`.
 - **Network_generation** (the original analysis repo, not part of this
-  suite) is the orchestration layer: it will depend on `networkGen` (and
-  later `networkPlot`) instead of keeping its own copies of this logic. See
-  that repo's own docs for its migration plan.
+  suite) is the orchestration layer: it will depend on `networkGen` and
+  `networkPlot` instead of keeping its own copies of this logic. The
+  loose `R/` scripts `networkPlot` replaced (`network_enrichment_and_vis.R`,
+  the `plot_kinase_pathway_heatmaps` family in `plotting_functions.R`, and
+  the dead per-cluster/topGO enrichment paths) are still to be removed from
+  that repo. See that repo's own docs for its migration plan.
 
 ## Shared vocabulary
 
