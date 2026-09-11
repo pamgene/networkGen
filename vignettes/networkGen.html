@@ -426,18 +426,13 @@ hub genes).</p>
 <p><code>networkGen</code> also ships a real reference PPI network as
 package data – <code>ppi_network_human_filtered_v12.5</code> (the
 default <code>ppi_network</code>, used automatically if you don’t pass
-one), built from STRING v12.5 (<em>Homo sapiens</em>): an edge is kept
-if it has direct, non-orthology-transferred support from at least one of
-the <code>experiments</code>, <code>database</code> (curated
-pathway/complex databases), <code>textmining</code>, or
-<code>coexpression</code> evidence channels (STRING’s genomic-context
-channels – neighborhood, fusion, cooccurrence, homology – aren’t used as
-an inclusion rule here), then filtered to STRING’s overall confidence
-<code>&gt;= 0.5</code>. <code>cost</code> is <code>1 - confidence</code>
-(floored at <code>0.01</code>), so lower cost = a stronger interaction.
-Built by the <code>DevOpti/STRING_download</code> pipeline – see
-<code>?ppi_network_human_filtered_v12.5</code> for the exact filtering
-rule.</p>
+one), built from STRING v12.5. An edge is kept if it has direct,
+non-transferred support from at least one of the
+<code>experiments</code>, <code>database</code>,
+<code>textmining</code>, or <code>coexpression</code> evidence channels.
+The STRING combined score is scaled between 0-1, then filtered for
+combined score <code>&gt;= 0.5</code>. Combined score is converted to
+cost: <code>cost = 1 - (combined score/1000)</code>. See: <a href="https://github.com/pamgene/STRING_download" class="uri">https://github.com/pamgene/STRING_download</a>.</p>
 <p>Also bundled: <code>ppi_networkv12_502_kins</code>, a narrower, older
 (STRING v12) variant restricted to 502 kinases, ~107K edges vs. ~1.2M
 for the full network – good enough for a kinase-activity network and
@@ -517,7 +512,7 @@ readable):</p>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">w =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>), <span class="at">ppi_network =</span> ppi_networkv12_502_kins,</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">respath =</span> multidataset_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844671958c8/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -528,7 +523,7 @@ readable):</p>
 <span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844671958c8/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -539,7 +534,7 @@ readable):</p>
 <span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844671958c8/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -550,7 +545,7 @@ readable):</p>
 <span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844671958c8/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -723,7 +718,7 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">sens =</span> sens_nudul, <span class="at">sens_perc_cutoff =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>),</span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">ppi_network =</span> ppi_networkv12_502_kins, <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844412334a5/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717850877306/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
@@ -736,7 +731,7 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; 7 sens_perc_cutoff 0.6                    </span></span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; 8 uka              uka_doses              </span></span>
 <span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; 9 sens             sens_nudul             </span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\RtmpkzparR\\file5844412334a5/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717850877306/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>

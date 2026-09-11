@@ -8,17 +8,14 @@ three-package suite -- see [`networkScore`](../networkScore) and
 
 ## Reference PPI network
 
-The default `ppi_network` (`ppi_network_human_filtered_v12.5`, bundled as
-package data) is built from **STRING v12.5** (*Homo sapiens*) by the
-`DevOpti/STRING_download` pipeline: an edge is kept if it has direct,
-non-orthology-transferred evidence from at least one of `experiments`,
-`database` (curated pathway/complex databases -- KEGG, Reactome, MetaCyc,
-EBI Complex Portal, GO Complexes), `textmining`, or `coexpression`
-(STRING's genomic-context channels -- neighborhood, fusion, cooccurrence,
-homology -- aren't used as an inclusion rule), then filtered to STRING's
-overall confidence `>= 0.5`. `cost = max(0.01, 1 - confidence)`. See
-`?ppi_network_human_filtered_v12.5` for details, and `DevOpti/STRING_download`
-(`generate_string_ppi.rmd` / `R/helper.R`) for the build script.
+The reference PPI network -- `ppi_network_human_filtered_v12.5`, the
+default `ppi_network`, bundled as package data -- is built from STRING
+v12.5. An edge is kept if it has direct, non-transferred support from at
+least one of the `experiments`, `database`, `textmining`, or
+`coexpression` evidence channels. The STRING combined score is scaled
+between 0-1, then filtered for combined score `>= 0.5`. Combined score is
+converted to cost: `cost = 1 - (combined score/1000)`. See:
+<https://github.com/pamgene/STRING_download>.
 
 ## Install
 

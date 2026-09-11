@@ -1,24 +1,13 @@
 #' Reference human protein-protein interaction network (STRING v12.5)
 #'
-#' The PPI network used as `ppi_network` throughout this project's analyses
-#' -- a filtered, high-confidence subset of STRING v12.5 human interactions.
-#' Built by the STRING-download pipeline (see `DevOpti/STRING_download`'s
-#' `generate_string_ppi.rmd` / `R/helper.R::generate_string_ppi()`), not
-#' regenerated here; bundled as-is so `networkGen` ships a working reference
-#' network out of the box instead of requiring every caller to independently
-#' rebuild one. This is the default `ppi_network` for
-#' [generate_paired_network()] and [generate_kinase_network()].
-#'
-#' Built from STRING's "full" per-evidence-channel links file for
-#' *Homo sapiens* (taxon 9606): an edge is kept if it has direct,
-#' non-orthology-transferred support from at least one of `experiments`,
-#' `database` (curated pathway/complex databases -- KEGG, Reactome,
-#' MetaCyc, EBI Complex Portal, GO Complexes), `textmining`, or
-#' `coexpression` -- STRING's genomic-context channels (neighborhood,
-#' fusion, cooccurrence, homology) are not used as an inclusion criterion.
-#' Kept edges are then filtered to STRING's overall `combined_score >= 500`
-#' (0.5 on the 0-1 scale, i.e. roughly medium-to-high confidence). `cost` is
-#' `max(0.01, 1 - combined_score)`, so lower cost = a stronger interaction.
+#' The reference PPI network -- `ppi_network_human_filtered_v12.5` -- is
+#' built from STRING v12.5. An edge is kept if it has direct, non-transferred
+#' support from at least one of the `experiments`, `database`, `textmining`,
+#' or `coexpression` evidence channels. The STRING combined score is scaled
+#' between 0-1, then filtered for combined score `>= 0.5`. Combined score is
+#' converted to cost: `cost = 1 - (combined score/1000)`. This is the
+#' default `ppi_network` for [generate_paired_network()] and
+#' [generate_kinase_network()].
 #'
 #' @format A tibble with 1,218,528 rows and 3 columns:
 #' \describe{
@@ -26,9 +15,7 @@
 #'   \item{tail}{Gene symbol, interaction partner 2.}
 #'   \item{cost}{Edge cost for PCSF -- lower means a stronger/more confident interaction.}
 #' }
-#' @source STRING v12.5 (<https://string-db.org>), filtered as described
-#'   above; see the STRING publication (<https://academic.oup.com/nar/article/53/D1/D730/7903368>)
-#'   for what each evidence channel means.
+#' @source <https://github.com/pamgene/STRING_download>.
 "ppi_network_human_filtered_v12.5"
 
 #' Reference PPI network, kinase-only subset (502 kinases)

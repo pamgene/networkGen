@@ -91,16 +91,13 @@ Full parameter documentation: `` ?generate_kinase_network ``.
 
 `networkGen` also ships a real reference PPI network as package data --
 `ppi_network_human_filtered_v12.5` (the default `ppi_network`, used
-automatically if you don't pass one), built from STRING v12.5
-(*Homo sapiens*): an edge is kept if it has direct, non-orthology-transferred
-support from at least one of the `experiments`, `database` (curated
-pathway/complex databases), `textmining`, or `coexpression` evidence
-channels (STRING's genomic-context channels -- neighborhood, fusion,
-cooccurrence, homology -- aren't used as an inclusion rule here), then
-filtered to STRING's overall confidence `>= 0.5`. `cost` is `1 -
-confidence` (floored at `0.01`), so lower cost = a stronger interaction.
-Built by the `DevOpti/STRING_download` pipeline -- see
-`` ?ppi_network_human_filtered_v12.5 `` for the exact filtering rule.
+automatically if you don't pass one), built from STRING v12.5. An edge is
+kept if it has direct, non-transferred support from at least one of the
+`experiments`, `database`, `textmining`, or `coexpression` evidence
+channels. The STRING combined score is scaled between 0-1, then filtered
+for combined score `>= 0.5`. Combined score is converted to cost:
+`cost = 1 - (combined score/1000)`. See:
+<https://github.com/pamgene/STRING_download>.
 
 Also bundled: `ppi_networkv12_502_kins`, a narrower, older (STRING v12)
 variant restricted to 502 kinases, ~107K edges vs. ~1.2M for the full
