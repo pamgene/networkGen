@@ -12,12 +12,12 @@ NULL
 # `.N` pronoun -- not real global variables, but R CMD check's static
 # analysis can't tell the difference.
 #
-# ppi_network_human_filtered_v12.5 is the bundled reference dataset (see
+# string_12.5 is the bundled reference dataset (see
 # data.R), used as the default `ppi_network` argument in
 # generate_paired_network()/generate_kinase_network()/build_network_grid()/
 # run_network_grid() -- lazy-loaded package data, not a real global, but
 # again indistinguishable to static analysis.
-utils::globalVariables(c("uniprotname", "LogFC", ".", ".N", "ppi_network_human_filtered_v12.5"))
+utils::globalVariables(c("uniprotname", "LogFC", ".", ".N", "string_12.5"))
 
 #' Build the `_spec<cutoff>` filename suffix, omitted when there's no filter
 #'

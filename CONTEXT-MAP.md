@@ -73,4 +73,4 @@ _Avoid_: cell, sample, comparison (used loosely elsewhere in older code)
 The protein-protein interaction network (edges with `head`/`tail`/`cost`
 columns) that a PCSF build searches over. Supplied by the caller — never a
 default/global value.
-_Avoid_: ppi_network_human_filtered_v12.5 (a specific loaded object's name, not a concept)
+_Avoid_: string_12.5 (a specific loaded object's name, not a concept)

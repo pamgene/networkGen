@@ -8,7 +8,7 @@ three-package suite -- see [`networkScore`](../networkScore) and
 
 ## Reference PPI network
 
-The reference PPI network -- `ppi_network_human_filtered_v12.5`, the
+The reference PPI network -- `string_12.5`, the
 default `ppi_network`, bundled as package data -- is built from STRING
 v12.5. An edge is kept if it has direct, non-transferred support from at
 least one of the `experiments`, `database`, `textmining`, or

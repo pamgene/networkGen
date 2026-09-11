@@ -424,9 +424,9 @@ hub genes).</p>
 <p>Full parameter documentation:
 <code>?generate_kinase_network</code>.</p>
 <p><code>networkGen</code> also ships a real reference PPI network as
-package data – <code>ppi_network_human_filtered_v12.5</code> (the
-default <code>ppi_network</code>, used automatically if you don’t pass
-one), built from STRING v12.5. An edge is kept if it has direct,
+package data – <code>string_12.5</code> (the default
+<code>ppi_network</code>, used automatically if you don’t pass one),
+built from STRING v12.5. An edge is kept if it has direct,
 non-transferred support from at least one of the
 <code>experiments</code>, <code>database</code>,
 <code>textmining</code>, or <code>coexpression</code> evidence channels.
@@ -437,7 +437,7 @@ cost: <code>cost = 1 - (combined score/1000)</code>. See: <a href="https://githu
 (STRING v12) variant restricted to 502 kinases, ~107K edges vs. ~1.2M
 for the full network – good enough for a kinase-activity network and
 much faster, used throughout the rest of this vignette:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">nrow</span>(ppi_network_human_filtered_v12<span class="fl">.5</span>)</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">nrow</span>(string_12<span class="fl">.5</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] 1218528</span></span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">nrow</span>(ppi_networkv12_502_kins)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1] 107508</span></span>
@@ -512,7 +512,7 @@ readable):</p>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">spec_cutoff =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">perc_cutoff =</span> <span class="fl">0.5</span>, <span class="at">w =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>), <span class="at">ppi_network =</span> ppi_networkv12_502_kins,</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">respath =</span> multidataset_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465089829e2/spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -523,7 +523,7 @@ readable):</p>
 <span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465089829e2/spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -534,7 +534,7 @@ readable):</p>
 <span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465089829e2/spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -545,7 +545,7 @@ readable):</p>
 <span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt; 5 rank_uka_abs TRUE                   </span></span>
 <span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a><span class="co">#&gt; 6 ppi_network  ppi_networkv12_502_kins</span></span>
 <span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co">#&gt; 7 uka          raw_multidataset       </span></span>
-<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717876b33989/thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465089829e2/spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4&quot;</span></span>
 <span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a><span class="co">#&gt; # A tibble: 7 × 2</span></span>
 <span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a><span class="co">#&gt;   parameter    value                  </span></span>
 <span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                  </span></span>
@@ -638,48 +638,48 @@ readable):</p>
 <span id="cb7-132"><a href="#cb7-132" tabindex="-1"></a><span class="co">#&gt; multidataset/03_24h_Pr2_TvsC|U2OS_DrugA vs Control| spec_cutoff =1.5| w =4: 22 nodes</span></span>
 <span id="cb7-133"><a href="#cb7-133" tabindex="-1"></a></span>
 <span id="cb7-134"><a href="#cb7-134" tabindex="-1"></a><span class="fu">list.files</span>(multidataset_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-135"><a href="#cb7-135" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-136"><a href="#cb7-136" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-137"><a href="#cb7-137" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-138"><a href="#cb7-138" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-139"><a href="#cb7-139" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-140"><a href="#cb7-140" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-141"><a href="#cb7-141" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                   </span></span>
-<span id="cb7-142"><a href="#cb7-142" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-143"><a href="#cb7-143" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-144"><a href="#cb7-144" tabindex="-1"></a><span class="co">#&gt; [10] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-145"><a href="#cb7-145" tabindex="-1"></a><span class="co">#&gt; [11] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-146"><a href="#cb7-146" tabindex="-1"></a><span class="co">#&gt; [12] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-147"><a href="#cb7-147" tabindex="-1"></a><span class="co">#&gt; [13] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-148"><a href="#cb7-148" tabindex="-1"></a><span class="co">#&gt; [14] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-149"><a href="#cb7-149" tabindex="-1"></a><span class="co">#&gt; [15] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-150"><a href="#cb7-150" tabindex="-1"></a><span class="co">#&gt; [16] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-151"><a href="#cb7-151" tabindex="-1"></a><span class="co">#&gt; [17] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                   </span></span>
-<span id="cb7-152"><a href="#cb7-152" tabindex="-1"></a><span class="co">#&gt; [18] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-153"><a href="#cb7-153" tabindex="-1"></a><span class="co">#&gt; [19] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
-<span id="cb7-154"><a href="#cb7-154" tabindex="-1"></a><span class="co">#&gt; [20] &quot;thr_1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
-<span id="cb7-155"><a href="#cb7-155" tabindex="-1"></a><span class="co">#&gt; [21] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-156"><a href="#cb7-156" tabindex="-1"></a><span class="co">#&gt; [22] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-157"><a href="#cb7-157" tabindex="-1"></a><span class="co">#&gt; [23] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
-<span id="cb7-158"><a href="#cb7-158" tabindex="-1"></a><span class="co">#&gt; [24] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
-<span id="cb7-159"><a href="#cb7-159" tabindex="-1"></a><span class="co">#&gt; [25] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-160"><a href="#cb7-160" tabindex="-1"></a><span class="co">#&gt; [26] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-161"><a href="#cb7-161" tabindex="-1"></a><span class="co">#&gt; [27] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
-<span id="cb7-162"><a href="#cb7-162" tabindex="-1"></a><span class="co">#&gt; [28] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                     </span></span>
-<span id="cb7-163"><a href="#cb7-163" tabindex="-1"></a><span class="co">#&gt; [29] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-164"><a href="#cb7-164" tabindex="-1"></a><span class="co">#&gt; [30] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-165"><a href="#cb7-165" tabindex="-1"></a><span class="co">#&gt; [31] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
-<span id="cb7-166"><a href="#cb7-166" tabindex="-1"></a><span class="co">#&gt; [32] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-167"><a href="#cb7-167" tabindex="-1"></a><span class="co">#&gt; [33] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-168"><a href="#cb7-168" tabindex="-1"></a><span class="co">#&gt; [34] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
-<span id="cb7-169"><a href="#cb7-169" tabindex="-1"></a><span class="co">#&gt; [35] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
-<span id="cb7-170"><a href="#cb7-170" tabindex="-1"></a><span class="co">#&gt; [36] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-171"><a href="#cb7-171" tabindex="-1"></a><span class="co">#&gt; [37] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-172"><a href="#cb7-172" tabindex="-1"></a><span class="co">#&gt; [38] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
-<span id="cb7-173"><a href="#cb7-173" tabindex="-1"></a><span class="co">#&gt; [39] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                     </span></span>
-<span id="cb7-174"><a href="#cb7-174" tabindex="-1"></a><span class="co">#&gt; [40] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-175"><a href="#cb7-175" tabindex="-1"></a><span class="co">#&gt; [41] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
-<span id="cb7-176"><a href="#cb7-176" tabindex="-1"></a><span class="co">#&gt; [42] &quot;thr_1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span></code></pre></div>
+<span id="cb7-135"><a href="#cb7-135" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-136"><a href="#cb7-136" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-137"><a href="#cb7-137" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-138"><a href="#cb7-138" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-139"><a href="#cb7-139" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-140"><a href="#cb7-140" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-141"><a href="#cb7-141" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                   </span></span>
+<span id="cb7-142"><a href="#cb7-142" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-143"><a href="#cb7-143" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-144"><a href="#cb7-144" tabindex="-1"></a><span class="co">#&gt; [10] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-145"><a href="#cb7-145" tabindex="-1"></a><span class="co">#&gt; [11] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-146"><a href="#cb7-146" tabindex="-1"></a><span class="co">#&gt; [12] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-147"><a href="#cb7-147" tabindex="-1"></a><span class="co">#&gt; [13] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-148"><a href="#cb7-148" tabindex="-1"></a><span class="co">#&gt; [14] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-149"><a href="#cb7-149" tabindex="-1"></a><span class="co">#&gt; [15] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-150"><a href="#cb7-150" tabindex="-1"></a><span class="co">#&gt; [16] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-151"><a href="#cb7-151" tabindex="-1"></a><span class="co">#&gt; [17] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                   </span></span>
+<span id="cb7-152"><a href="#cb7-152" tabindex="-1"></a><span class="co">#&gt; [18] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-153"><a href="#cb7-153" tabindex="-1"></a><span class="co">#&gt; [19] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.5.csv&quot;      </span></span>
+<span id="cb7-154"><a href="#cb7-154" tabindex="-1"></a><span class="co">#&gt; [20] &quot;spec1.5_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.5.csv&quot;    </span></span>
+<span id="cb7-155"><a href="#cb7-155" tabindex="-1"></a><span class="co">#&gt; [21] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-156"><a href="#cb7-156" tabindex="-1"></a><span class="co">#&gt; [22] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-157"><a href="#cb7-157" tabindex="-1"></a><span class="co">#&gt; [23] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-158"><a href="#cb7-158" tabindex="-1"></a><span class="co">#&gt; [24] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
+<span id="cb7-159"><a href="#cb7-159" tabindex="-1"></a><span class="co">#&gt; [25] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-160"><a href="#cb7-160" tabindex="-1"></a><span class="co">#&gt; [26] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-161"><a href="#cb7-161" tabindex="-1"></a><span class="co">#&gt; [27] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-162"><a href="#cb7-162" tabindex="-1"></a><span class="co">#&gt; [28] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                                     </span></span>
+<span id="cb7-163"><a href="#cb7-163" tabindex="-1"></a><span class="co">#&gt; [29] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-164"><a href="#cb7-164" tabindex="-1"></a><span class="co">#&gt; [30] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-165"><a href="#cb7-165" tabindex="-1"></a><span class="co">#&gt; [31] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-166"><a href="#cb7-166" tabindex="-1"></a><span class="co">#&gt; [32] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-167"><a href="#cb7-167" tabindex="-1"></a><span class="co">#&gt; [33] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-168"><a href="#cb7-168" tabindex="-1"></a><span class="co">#&gt; [34] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/edges_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-169"><a href="#cb7-169" tabindex="-1"></a><span class="co">#&gt; [35] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/missing_nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span>
+<span id="cb7-170"><a href="#cb7-170" tabindex="-1"></a><span class="co">#&gt; [36] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-171"><a href="#cb7-171" tabindex="-1"></a><span class="co">#&gt; [37] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-172"><a href="#cb7-172" tabindex="-1"></a><span class="co">#&gt; [38] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/nodes_U2OS6h_DrugA vs Control_spec1.csv&quot;        </span></span>
+<span id="cb7-173"><a href="#cb7-173" tabindex="-1"></a><span class="co">#&gt; [39] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/params.csv&quot;                                     </span></span>
+<span id="cb7-174"><a href="#cb7-174" tabindex="-1"></a><span class="co">#&gt; [40] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_Sgroup1_T1 vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-175"><a href="#cb7-175" tabindex="-1"></a><span class="co">#&gt; [41] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS_DrugA vs Control_spec1.csv&quot;          </span></span>
+<span id="cb7-176"><a href="#cb7-176" tabindex="-1"></a><span class="co">#&gt; [42] &quot;spec1_perc0.5_ppi_networkv12_502_kins_ukaabs1_b2_w4/wc_df_U2OS6h_DrugA vs Control_spec1.csv&quot;</span></span></code></pre></div>
 <p>Four folders (one per <code>spec_cutoff</code> x <code>w</code>
 combination), each holding all 3 datasets’
 <code>nodes</code>/<code>edges</code>/<code>wc_df</code> CSVs plus one
@@ -718,7 +718,7 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">sens =</span> sens_nudul, <span class="at">sens_perc_cutoff =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>),</span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">ppi_network =</span> ppi_networkv12_502_kins, <span class="at">respath =</span> paired_dir, <span class="at">write =</span> <span class="cn">TRUE</span>, <span class="at">n =</span> <span class="dv">2</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717850877306/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465069141bb4/uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
@@ -731,7 +731,7 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; 7 sens_perc_cutoff 0.6                    </span></span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; 8 uka              uka_doses              </span></span>
 <span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; 9 sens             sens_nudul             </span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmpgjb6Xo\\file717850877306/uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;param folder: C:\\Users\\DSCHUL~1\\AppData\\Local\\Temp\\Rtmp0mn4QD\\file465069141bb4/uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2&quot;</span></span>
 <span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 × 2</span></span>
 <span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;   parameter        value                  </span></span>
 <span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;                  </span></span>
@@ -823,29 +823,29 @@ specificity is a kinase-activity-only concept:</p>
 <span id="cb9-112"><a href="#cb9-112" tabindex="-1"></a><span class="co">#&gt; 4_T01 vs DMSO| sens_perc_cutoff =0.7: 60 nodes, 64 edges</span></span>
 <span id="cb9-113"><a href="#cb9-113" tabindex="-1"></a></span>
 <span id="cb9-114"><a href="#cb9-114" tabindex="-1"></a><span class="fu">list.files</span>(paired_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-115"><a href="#cb9-115" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-116"><a href="#cb9-116" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-117"><a href="#cb9-117" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-118"><a href="#cb9-118" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
-<span id="cb9-119"><a href="#cb9-119" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-120"><a href="#cb9-120" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-121"><a href="#cb9-121" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-122"><a href="#cb9-122" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
-<span id="cb9-123"><a href="#cb9-123" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-124"><a href="#cb9-124" tabindex="-1"></a><span class="co">#&gt; [10] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-125"><a href="#cb9-125" tabindex="-1"></a><span class="co">#&gt; [11] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-126"><a href="#cb9-126" tabindex="-1"></a><span class="co">#&gt; [12] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-127"><a href="#cb9-127" tabindex="-1"></a><span class="co">#&gt; [13] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-128"><a href="#cb9-128" tabindex="-1"></a><span class="co">#&gt; [14] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-129"><a href="#cb9-129" tabindex="-1"></a><span class="co">#&gt; [15] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;</span></span>
-<span id="cb9-130"><a href="#cb9-130" tabindex="-1"></a><span class="co">#&gt; [16] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
-<span id="cb9-131"><a href="#cb9-131" tabindex="-1"></a><span class="co">#&gt; [17] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-132"><a href="#cb9-132" tabindex="-1"></a><span class="co">#&gt; [18] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-133"><a href="#cb9-133" tabindex="-1"></a><span class="co">#&gt; [19] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-134"><a href="#cb9-134" tabindex="-1"></a><span class="co">#&gt; [20] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
-<span id="cb9-135"><a href="#cb9-135" tabindex="-1"></a><span class="co">#&gt; [21] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
-<span id="cb9-136"><a href="#cb9-136" tabindex="-1"></a><span class="co">#&gt; [22] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
-<span id="cb9-137"><a href="#cb9-137" tabindex="-1"></a><span class="co">#&gt; [23] &quot;uka_doses/sens_nudul_thr_0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;</span></span></code></pre></div>
+<span id="cb9-115"><a href="#cb9-115" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-116"><a href="#cb9-116" tabindex="-1"></a><span class="co">#&gt;  [2] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-117"><a href="#cb9-117" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-118"><a href="#cb9-118" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
+<span id="cb9-119"><a href="#cb9-119" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-120"><a href="#cb9-120" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-121"><a href="#cb9-121" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-122"><a href="#cb9-122" tabindex="-1"></a><span class="co">#&gt;  [8] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
+<span id="cb9-123"><a href="#cb9-123" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-124"><a href="#cb9-124" tabindex="-1"></a><span class="co">#&gt; [10] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-125"><a href="#cb9-125" tabindex="-1"></a><span class="co">#&gt; [11] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.6_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-126"><a href="#cb9-126" tabindex="-1"></a><span class="co">#&gt; [12] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-127"><a href="#cb9-127" tabindex="-1"></a><span class="co">#&gt; [13] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-128"><a href="#cb9-128" tabindex="-1"></a><span class="co">#&gt; [14] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/edges_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-129"><a href="#cb9-129" tabindex="-1"></a><span class="co">#&gt; [15] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;</span></span>
+<span id="cb9-130"><a href="#cb9-130" tabindex="-1"></a><span class="co">#&gt; [16] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/missing_nodes_4_T01 vs DMSO_spec0.5.csv&quot;  </span></span>
+<span id="cb9-131"><a href="#cb9-131" tabindex="-1"></a><span class="co">#&gt; [17] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-132"><a href="#cb9-132" tabindex="-1"></a><span class="co">#&gt; [18] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-133"><a href="#cb9-133" tabindex="-1"></a><span class="co">#&gt; [19] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/nodes_4_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-134"><a href="#cb9-134" tabindex="-1"></a><span class="co">#&gt; [20] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/params.csv&quot;                               </span></span>
+<span id="cb9-135"><a href="#cb9-135" tabindex="-1"></a><span class="co">#&gt; [21] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_0.5_T01 vs DMSO_spec0.5.csv&quot;        </span></span>
+<span id="cb9-136"><a href="#cb9-136" tabindex="-1"></a><span class="co">#&gt; [22] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_2_T01 vs DMSO_spec0.5.csv&quot;          </span></span>
+<span id="cb9-137"><a href="#cb9-137" tabindex="-1"></a><span class="co">#&gt; [23] &quot;uka_doses/sens_nudul_spec0.5_perc0.5_sensperc0.7_ppi_networkv12_502_kins_ukaabs1_b2_w2/wc_df_4_T01 vs DMSO_spec0.5.csv&quot;</span></span></code></pre></div>
 <p>The folder additionally nests under a <code>uka</code>-named
 subfolder (since output there depends on both <code>uka</code> and
 <code>sens</code>), with one subfolder per distinct

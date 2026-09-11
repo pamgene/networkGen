@@ -6,7 +6,7 @@
 \usage{
 generate_kinase_network(
   uka,
-  ppi_network = ppi_network_human_filtered_v12.5,
+  ppi_network = string_12.5,
   spec_cutoff,
   b = 2,
   w = 2,
@@ -24,7 +24,7 @@ generate_kinase_network(
 
 \item{ppi_network}{Data frame with columns \code{head}, \code{tail}, \code{cost} -- the
 PPI network to search over. Defaults to the bundled
-\link{ppi_network_human_filtered_v12.5} reference network (lazy-loaded from
+\link{string_12.5} reference network (lazy-loaded from
 the package's own data, not a global variable -- pass a different data
 frame explicitly, e.g. \link{ppi_networkv12_502_kins}, to use another one).}
 

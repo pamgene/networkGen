@@ -22,7 +22,7 @@ test_that("build_param_folder encodes recognized parameters into a folder name, 
   )
 
   folder <- build_param_folder(params)
-  expect_true(grepl("thr_0.7", folder))
+  expect_true(grepl("spec0.7", folder))
   expect_true(grepl("ppi_networkv12", folder))
   expect_true(grepl("ukaabs1_b1.5", folder))
 })
@@ -33,7 +33,7 @@ test_that("build_param_folder handles a spec_cutoff vector (a sweep captured for
     spec_cutoff = c(0.7, 0.9), rank_uka_abs = TRUE, b = 1.5
   )
 
-  expect_true(grepl("thr_0.7-0.9", build_param_folder(params)))
+  expect_true(grepl("spec0.7-0.9", build_param_folder(params)))
 })
 
 test_that("build_param_folder omits spec_cutoff/perc_cutoff from the name when they're 0", {
@@ -43,7 +43,7 @@ test_that("build_param_folder omits spec_cutoff/perc_cutoff from the name when t
   )
 
   folder <- build_param_folder(params)
-  expect_false(grepl("thr_", folder))
+  expect_false(grepl("spec", folder))
   expect_false(grepl("perc", folder))
   expect_true(grepl("ukaabs1_b1.5", folder))
 })
@@ -55,8 +55,22 @@ test_that("build_param_folder still shows spec_cutoff/perc_cutoff when they're n
   )
 
   folder <- build_param_folder(params)
-  expect_true(grepl("thr_0.7", folder))
+  expect_true(grepl("spec0.7", folder))
   expect_true(grepl("perc0.5", folder))
+})
+
+test_that("build_param_folder omits cs from the folder name; save_params still records it", {
+  params <- capture_params(
+    uka = "uka_data", ppi_network = "ppi_networkv12",
+    spec_cutoff = 0.7, rank_uka_abs = TRUE, b = 1.5, cs = TRUE
+  )
+
+  expect_false(grepl("cs1|cs0", build_param_folder(params)))
+
+  respath <- file.path(tempdir(), "save_params_cs_test")
+  dir.create(respath, showWarnings = FALSE)
+  df <- save_params(params, respath = respath)
+  expect_true("cs" %in% df$parameter)
 })
 
 test_that("build_param_folder nests under a uka-named subfolder only when sens is present (paired analyses)", {
@@ -95,7 +109,7 @@ test_that("prepare_run_params captures params, creates a parameter-encoded folde
 
   expect_true(dir.exists(params$respath))
   expect_true(file.exists(file.path(params$respath, "params.csv")))
-  expect_true(grepl("thr_0.7-0.9", params$respath))
+  expect_true(grepl("spec0.7-0.9", params$respath))
   expect_true(grepl("ukaabs1_b1.5", params$respath))
   expect_identical(params$uka, uka)
 })

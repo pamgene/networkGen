@@ -15,7 +15,9 @@ value or vector; omitted from the name entirely when \code{0}, since \code{0}
 means "no filtering on this cutoff"), \code{perc_cutoff} (same omit-if-0
 rule), \code{sens_perc_cutoff} (optional -- the sensitivity-side percentile
 cutoff, gridded independently of \code{perc_cutoff}; same omit-if-0 rule),
-\code{rank_uka_abs}, \code{b}, \code{w}, \code{cs} (optional), \code{art_nodes} (optional).}
+\code{rank_uka_abs}, \code{b}, \code{w}, \code{cs} (optional -- recorded in \code{params.csv}
+via \code{\link[=save_params]{save_params()}}, but never shown in the folder name), \code{art_nodes}
+(optional).}
 }
 \value{
 The folder name (a single path segment, or \code{uka_name/components}

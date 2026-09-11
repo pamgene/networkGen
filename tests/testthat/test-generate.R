@@ -138,23 +138,29 @@ test_that("written nodes/edges/wc_df filenames omit _spec when spec_cutoff is 0,
   expect_true(file.exists(file.path(respath_nonzero, "wc_df_cond_spec0.7.csv")))
 })
 
-test_that("ppi_network defaults to the bundled ppi_network_human_filtered_v12.5", {
-  expect_identical(formals(generate_kinase_network)$ppi_network, as.symbol("ppi_network_human_filtered_v12.5"))
-  expect_identical(formals(generate_paired_network)$ppi_network, as.symbol("ppi_network_human_filtered_v12.5"))
+test_that("ppi_network defaults to the bundled string_12.5", {
+  expect_identical(formals(generate_kinase_network)$ppi_network, as.symbol("string_12.5"))
+  expect_identical(formals(generate_paired_network)$ppi_network, as.symbol("string_12.5"))
 })
 
 # This is the one deliberately "heavy" test in the suite -- it runs PCSF
-# over the full ~1.2M-edge bundled ppi_network_human_filtered_v12.5 (a few
-# seconds), rather than a tiny hand-built graph. Everything else in this
-# file uses small toy networks precisely so the rest of the suite stays
-# fast; this test exists only to confirm the default-argument wiring and
-# real-scale behavior work, not to be a template for how every PCSF test
-# should be written.
+# over the full ~1.2M-edge bundled string_12.5, rather than a tiny
+# hand-built graph. Everything else in this file uses small toy networks
+# precisely so the rest of the suite stays fast; this test exists only to
+# confirm the default-argument wiring and real-scale behavior work, not to
+# be a template for how every PCSF test should be written. n = 2 (rather
+# than the function's own default of 8) -- the one-time interactome
+# construction over 1.2M edges (what actually makes this "heavy") happens
+# once regardless of n; only the per-run solve cost scales with it, and
+# this test's assertions (membership, class) don't depend on how many
+# randomized runs get consensus-averaged. Timed at n=8 vs n=2: 20s vs
+# 9.8s -- this one test was ~20 of the ~21s the whole suite's real-PCSF
+# tests take in `R CMD check`.
 test_that("generate_kinase_network works against the real bundled reference network with real gene symbols, using the default ppi_network (needs real PCSF)", {
   skip_if_not(pcsf_functional(), "real PCSF compiled package not installed in this dev environment")
 
   set.seed(42)
-  real_genes <- sample(unique(c(ppi_network_human_filtered_v12.5$head, ppi_network_human_filtered_v12.5$tail)), 15)
+  real_genes <- sample(unique(c(string_12.5$head, string_12.5$tail)), 15)
   uka_real <- data.frame(name = real_genes, prize = stats::runif(15, 0.5, 1), type = "Kinase", LogFC = stats::rnorm(15))
 
   # 15 random genes aren't a biologically connected set: at the default
@@ -162,7 +168,7 @@ test_that("generate_kinase_network works against the real bundled reference netw
   # list. This test is about real-scale PCSF wiring, not the defaults, so
   # it uses b = 10, w = 10 -- high enough w that terminals must route
   # through the network to be kept.
-  result <- generate_kinase_network(uka = uka_real, spec_cutoff = 0, b = 10, w = 10, condition = "real_network_test", write = FALSE)
+  result <- generate_kinase_network(uka = uka_real, spec_cutoff = 0, b = 10, w = 10, n = 2, condition = "real_network_test", write = FALSE)
 
   expect_s3_class(result, "networkGen_result")
   expect_true(all(real_genes %in% result$nodes$Protein))

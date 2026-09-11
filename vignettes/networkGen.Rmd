@@ -90,7 +90,7 @@ through high-degree hub genes).
 Full parameter documentation: `` ?generate_kinase_network ``.
 
 `networkGen` also ships a real reference PPI network as package data --
-`ppi_network_human_filtered_v12.5` (the default `ppi_network`, used
+`string_12.5` (the default `ppi_network`, used
 automatically if you don't pass one), built from STRING v12.5. An edge is
 kept if it has direct, non-transferred support from at least one of the
 `experiments`, `database`, `textmining`, or `coexpression` evidence
@@ -105,7 +105,7 @@ network -- good enough for a kinase-activity network and much faster, used
 throughout the rest of this vignette:
 
 ```{r ref-network}
-nrow(ppi_network_human_filtered_v12.5)
+nrow(string_12.5)
 nrow(ppi_networkv12_502_kins)
 head(ppi_networkv12_502_kins)
 ```
