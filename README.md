@@ -2,8 +2,23 @@
 
 Builds PCSF (prize-collecting Steiner forest) networks from kinase-activity
 data, optionally paired with sensitivity data. Foundation package of a
-four-package suite -- see [`networkScore`](../networkScore), and the
-suite-wide [Context Map](./CONTEXT-MAP.md).
+three-package suite -- see [`networkScore`](../networkScore) and
+[`networkPlot`](../networkPlot), and the suite-wide
+[Context Map](./CONTEXT-MAP.md).
+
+## Reference PPI network
+
+The default `ppi_network` (`ppi_network_human_filtered_v12.5`, bundled as
+package data) is built from **STRING v12.5** (*Homo sapiens*) by the
+`DevOpti/STRING_download` pipeline: an edge is kept if it has direct,
+non-orthology-transferred evidence from at least one of `experiments`,
+`database` (curated pathway/complex databases -- KEGG, Reactome, MetaCyc,
+EBI Complex Portal, GO Complexes), `textmining`, or `coexpression`
+(STRING's genomic-context channels -- neighborhood, fusion, cooccurrence,
+homology -- aren't used as an inclusion rule), then filtered to STRING's
+overall confidence `>= 0.5`. `cost = max(0.01, 1 - confidence)`. See
+`?ppi_network_human_filtered_v12.5` for details, and `DevOpti/STRING_download`
+(`generate_string_ppi.rmd` / `R/helper.R`) for the build script.
 
 ## Install
 

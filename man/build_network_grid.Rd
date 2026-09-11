@@ -13,7 +13,7 @@ build_network_grid(
   b = 2,
   w = 2,
   rank_uka_abs = TRUE,
-  ppi_network = ppi_networkv12,
+  ppi_network = ppi_network_human_filtered_v12.5,
   dataset_col = "dataset"
 )
 }
@@ -43,8 +43,9 @@ mechanism rather than a second, separate expansion step. \code{b}/\code{w}
 default to \code{2} (see \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}}).}
 
 \item{ppi_network}{A data frame with columns \code{head}, \code{tail}, \code{cost}, or a
-fully named list of them (e.g. \code{list(v12 = ppi_networkv12, kins502 = ppi_networkv12_502_kins)}) to grid across more than one reference
-network. Defaults to the bundled \link{ppi_networkv12}.}
+fully named list of them (e.g. \code{list(v12_5 = ppi_network_human_filtered_v12.5, kins502 = ppi_networkv12_502_kins)}) to grid across more than one
+reference network. Defaults to the bundled
+\link{ppi_network_human_filtered_v12.5}.}
 
 \item{dataset_col}{Name of the dataset-identifying column, if present in
 \code{raw_uka}. Default \code{"dataset"}.}

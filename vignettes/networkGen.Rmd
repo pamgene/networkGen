@@ -90,14 +90,25 @@ through high-degree hub genes).
 Full parameter documentation: `` ?generate_kinase_network ``.
 
 `networkGen` also ships a real reference PPI network as package data --
-`ppi_networkv12` (the default `ppi_network`, used automatically if you don't
-pass one), plus two narrower variants: `ppi_networkv12_filt`, and
-`ppi_networkv12_502_kins` (the smallest -- restricted to 502 kinases, ~107K
-edges vs. 1.1M for the full network -- good enough for a kinase-activity
-network and much faster, used throughout the rest of this vignette):
+`ppi_network_human_filtered_v12.5` (the default `ppi_network`, used
+automatically if you don't pass one), built from STRING v12.5
+(*Homo sapiens*): an edge is kept if it has direct, non-orthology-transferred
+support from at least one of the `experiments`, `database` (curated
+pathway/complex databases), `textmining`, or `coexpression` evidence
+channels (STRING's genomic-context channels -- neighborhood, fusion,
+cooccurrence, homology -- aren't used as an inclusion rule here), then
+filtered to STRING's overall confidence `>= 0.5`. `cost` is `1 -
+confidence` (floored at `0.01`), so lower cost = a stronger interaction.
+Built by the `DevOpti/STRING_download` pipeline -- see
+`` ?ppi_network_human_filtered_v12.5 `` for the exact filtering rule.
+
+Also bundled: `ppi_networkv12_502_kins`, a narrower, older (STRING v12)
+variant restricted to 502 kinases, ~107K edges vs. ~1.2M for the full
+network -- good enough for a kinase-activity network and much faster, used
+throughout the rest of this vignette:
 
 ```{r ref-network}
-nrow(ppi_networkv12)
+nrow(ppi_network_human_filtered_v12.5)
 nrow(ppi_networkv12_502_kins)
 head(ppi_networkv12_502_kins)
 ```

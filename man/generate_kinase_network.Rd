@@ -6,7 +6,7 @@
 \usage{
 generate_kinase_network(
   uka,
-  ppi_network = ppi_networkv12,
+  ppi_network = ppi_network_human_filtered_v12.5,
   spec_cutoff,
   b = 2,
   w = 2,
@@ -23,10 +23,10 @@ generate_kinase_network(
 \code{prize}, \code{type}, \code{LogFC}), e.g. from \code{\link[=uka_top]{uka_top()}}.}
 
 \item{ppi_network}{Data frame with columns \code{head}, \code{tail}, \code{cost} -- the
-PPI network to search over. Defaults to the bundled \link{ppi_networkv12}
-reference network (lazy-loaded from the package's own data, not a
-global variable -- pass a different data frame explicitly, e.g.
-\link{ppi_networkv12_filt} or \link{ppi_networkv12_502_kins}, to use another one).}
+PPI network to search over. Defaults to the bundled
+\link{ppi_network_human_filtered_v12.5} reference network (lazy-loaded from
+the package's own data, not a global variable -- pass a different data
+frame explicitly, e.g. \link{ppi_networkv12_502_kins}, to use another one).}
 
 \item{spec_cutoff}{Specificity cutoff, recorded in \code{maintitle}/output file
 names.}
@@ -59,5 +59,5 @@ The pure generation step for the kinase-only analysis: builds one PCSF
 network from a pre-filtered kinase terminal-node data frame (e.g. from
 \code{\link[=uka_top]{uka_top()}}). Computes no topology statistics (that's \code{networkScore}'s
 job) and does no pathway enrichment or plotting (that's
-\code{networkEnrich}/\code{networkPlot}'s job).
+\code{networkPlot}'s job).
 }

@@ -5,18 +5,21 @@
 \alias{ppi_networkv12_502_kins}
 \title{Reference PPI network, kinase-only subset (502 kinases)}
 \format{
-A tibble with 107,508 rows and 3 columns (\code{head}, \code{tail}, \code{cost}) -- see \link{ppi_networkv12}.
+A tibble with 107,508 rows and 3 columns (\code{head}, \code{tail}, \code{cost}).
 }
 \source{
-Same as \link{ppi_networkv12}.
+STRING v12, filtered the same way as
+\link{ppi_network_human_filtered_v12.5} (an earlier build).
 }
 \usage{
 ppi_networkv12_502_kins
 }
 \description{
-\link{ppi_networkv12} restricted to interactions involving a curated set of 502
-kinases, 107,508 rows. Same \code{head}/\code{tail}/\code{cost} schema and source. Not
-the default -- pass explicitly as \code{ppi_network} when working with kinases
-only (e.g. faster iteration during development).
+A restriction of an earlier STRING v12 build of the reference network
+(see \link{ppi_network_human_filtered_v12.5}) to interactions involving a
+curated set of 502 kinases, 107,508 rows. Same \code{head}/\code{tail}/\code{cost}
+schema. Not the default -- pass explicitly as \code{ppi_network} when working
+with kinases only (e.g. faster iteration during development). Not yet
+regenerated from the current v12.5 default network.
 }
 \keyword{datasets}

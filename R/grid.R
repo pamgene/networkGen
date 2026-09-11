@@ -21,7 +21,7 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
   if (!is.list(ppi_network) || is.null(names(ppi_network)) || any(names(ppi_network) == "")) {
     stop(
       "ppi_network must be a single data frame, or a fully named list of them ",
-      "(e.g. list(v12 = ppi_networkv12, kins502 = ppi_networkv12_502_kins)) -- ",
+      "(e.g. list(v12_5 = ppi_network_human_filtered_v12.5, kins502 = ppi_networkv12_502_kins)) -- ",
       "each name is used for output-folder naming.",
       call. = FALSE
     )
@@ -63,9 +63,10 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   mechanism rather than a second, separate expansion step. `b`/`w`
 #'   default to `2` (see [PCSF_rand_pg()]).
 #' @param ppi_network A data frame with columns `head`, `tail`, `cost`, or a
-#'   fully named list of them (e.g. `list(v12 = ppi_networkv12, kins502 =
-#'   ppi_networkv12_502_kins)`) to grid across more than one reference
-#'   network. Defaults to the bundled [ppi_networkv12].
+#'   fully named list of them (e.g. `list(v12_5 = ppi_network_human_filtered_v12.5,
+#'   kins502 = ppi_networkv12_502_kins)`) to grid across more than one
+#'   reference network. Defaults to the bundled
+#'   [ppi_network_human_filtered_v12.5].
 #' @param dataset_col Name of the dataset-identifying column, if present in
 #'   `raw_uka`. Default `"dataset"`.
 #'
@@ -79,7 +80,7 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #' @export
 build_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                                 spec_cutoff, perc_cutoff, b = 2, w = 2, rank_uka_abs = TRUE,
-                                ppi_network = ppi_networkv12, dataset_col = "dataset") {
+                                ppi_network = ppi_network_human_filtered_v12.5, dataset_col = "dataset") {
   ppi_label <- rlang::as_label(rlang::enquo(ppi_network))
   ppi_list <- normalize_ppi_network_list(ppi_network, ppi_label)
 
@@ -222,7 +223,8 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 #'   `ppi_network_name`, and, for the paired path, `sens_perc_cutoff`).
 #' @export
 run_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
-                              spec_cutoff, perc_cutoff, b = 2, w = 2, ppi_network = ppi_networkv12,
+                              spec_cutoff, perc_cutoff, b = 2, w = 2,
+                              ppi_network = ppi_network_human_filtered_v12.5,
                               rank_uka_abs = TRUE, dataset_col = "dataset",
                               sens = NULL, sens_perc_cutoff = NULL, sens_balance = TRUE,
                               respath, write = TRUE, max_tasks = 500, ...) {

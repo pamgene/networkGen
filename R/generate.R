@@ -39,17 +39,17 @@ new_network_result <- function(raw, params) {
 #' pre-filtered kinase and sensitivity terminal-node data frames (e.g. from
 #' [uka_top()] / [sens_top()]) and builds one PCSF network. Computes no
 #' topology statistics (that's `networkScore`'s job) and does no pathway
-#' enrichment or plotting (that's `networkEnrich`/`networkPlot`'s job).
+#' enrichment or plotting (that's `networkPlot`'s job).
 #'
 #' @param uka Pre-filtered kinase terminal-node data frame (columns `name`,
 #'   `prize`, `type`, `LogFC`), e.g. from [uka_top()].
 #' @param sens Pre-filtered sensitivity terminal-node data frame, same shape,
 #'   e.g. from [sens_top()].
 #' @param ppi_network Data frame with columns `head`, `tail`, `cost` -- the
-#'   PPI network to search over. Defaults to the bundled [ppi_networkv12]
-#'   reference network (lazy-loaded from the package's own data, not a
-#'   global variable -- pass a different data frame explicitly, e.g.
-#'   [ppi_networkv12_filt] or [ppi_networkv12_502_kins], to use another one).
+#'   PPI network to search over. Defaults to the bundled
+#'   [ppi_network_human_filtered_v12.5] reference network (lazy-loaded from
+#'   the package's own data, not a global variable -- pass a different data
+#'   frame explicitly, e.g. [ppi_networkv12_502_kins], to use another one).
 #' @param spec_cutoff Specificity cutoff, recorded in `maintitle`/output file
 #'   names.
 #' @param b,w The two main PCSF cost knobs -- `b` multiplies node prizes
@@ -69,7 +69,7 @@ new_network_result <- function(raw, params) {
 #' @return A `"networkGen_result"` object (see [new_network_result()]), or
 #'   `NULL` if PCSF could not find a subnetwork for these inputs.
 #' @export
-generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spec_cutoff, b = 2, w = 2,
+generate_paired_network <- function(uka, sens, ppi_network = ppi_network_human_filtered_v12.5, spec_cutoff, b = 2, w = 2,
                                      condition = NULL, res.path = NULL,
                                      art_nodes = NULL, art_lfc = NULL,
                                      write = FALSE, ...) {
@@ -110,7 +110,7 @@ generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spe
 #' network from a pre-filtered kinase terminal-node data frame (e.g. from
 #' [uka_top()]). Computes no topology statistics (that's `networkScore`'s
 #' job) and does no pathway enrichment or plotting (that's
-#' `networkEnrich`/`networkPlot`'s job).
+#' `networkPlot`'s job).
 #'
 #' @param uka Pre-filtered kinase terminal-node data frame (columns `name`,
 #'   `prize`, `type`, `LogFC`), e.g. from [uka_top()].
@@ -119,7 +119,7 @@ generate_paired_network <- function(uka, sens, ppi_network = ppi_networkv12, spe
 #' @return A `"networkGen_result"` object (see [new_network_result()]), or
 #'   `NULL` if PCSF could not find a subnetwork for these inputs.
 #' @export
-generate_kinase_network <- function(uka, ppi_network = ppi_networkv12, spec_cutoff, b = 2, w = 2,
+generate_kinase_network <- function(uka, ppi_network = ppi_network_human_filtered_v12.5, spec_cutoff, b = 2, w = 2,
                                      condition = NULL, res.path = NULL,
                                      art_nodes = NULL, art_lfc = NULL,
                                      write = FALSE, ...) {
