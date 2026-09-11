@@ -10,9 +10,10 @@ load_uka_dataset_files(paths)
 \item{paths}{Character vector of raw UKA CSV file paths.}
 }
 \value{
-One combined data frame (raw Tercen-style columns, as read),
-with \code{dataset} and \code{kinase_type} (\code{"PTK"}, \code{"STK"}, or \code{NA} for
-non-matching files) columns added. Pass to \code{\link[=build_network_grid]{build_network_grid()}}.
+One combined data frame (Tercen prefixes already stripped -- see
+\code{\link[=clean_tercen_columns]{clean_tercen_columns()}}), with \code{dataset} and \code{kinase_type} (\code{"PTK"},
+\code{"STK"}, or \code{NA} for non-matching files) columns added. Pass to
+\code{\link[=build_network_grid]{build_network_grid()}}.
 }
 \description{
 The one place file-path/filename knowledge lives in this package --
@@ -32,4 +33,18 @@ experiments can reuse the same \verb{<number>_<dataset name>} (e.g. both named
 A path that doesn't match this naming convention falls back to using its
 own file name (without extension) as a standalone dataset -- no PTK/STK
 merging attempted, since there's nothing to merge.
+
+Each file's columns are cleaned (\code{\link[=clean_tercen_columns]{clean_tercen_columns()}}) \emph{before} the
+files are row-bound. Real UKA exports carry a Tercen app-instance number
+in their column prefixes (\code{csUKA_app0.UKA0.Sgroup_contrast} in one file,
+\code{csUKA_app1.UKA00.Sgroup_contrast} in another) that differs from file to
+file. Binding the \emph{raw}, still-prefixed frames first -- and cleaning only
+afterward -- used to produce one real column per distinct prefix variant
+plus an all-NA leftover column for every other file's variant; cleaning
+then collapsed all of them onto the same short name (e.g.
+\code{Sgroup_contrast}), and a downstream \code{select()} could silently grab one
+of the all-NA duplicates instead of the real column for a given dataset.
+Cleaning per file first means every file already shares the one
+canonical name by the time they're bound, so no duplicate columns are
+ever created.
 }

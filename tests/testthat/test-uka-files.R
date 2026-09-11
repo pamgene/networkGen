@@ -53,3 +53,51 @@ test_that("load_uka_dataset_files handles a dataset name containing underscores"
   expect_true(grepl("03_24h_Pr2_TvsC$", out$dataset))
   expect_equal(out$kinase_type, "PTK")
 })
+
+# Regression test: real csUKA exports carry a Tercen app-instance number in
+# their column prefixes that differs file to file (e.g.
+# "csUKA_app0.UKA0.Sgroup_contrast" vs "csUKA_app1.UKA00.Sgroup_contrast").
+# Binding the raw, still-prefixed frames together (the old behavior) unions
+# both prefix variants as separate columns -- real for the file it came
+# from, all-NA for every other file's rows. A downstream clean_fn's
+# clean_tercen_columns() then collapses both variants onto the same short
+# name, and select(all_of(name)) could silently grab the all-NA one instead
+# of the real one for a given dataset -- producing an NA condition column
+# for that dataset even though the raw file had a real value. Cleaning each
+# file's columns before binding (this test) means every file already
+# shares the one canonical name, so no duplicate/all-NA column is ever
+# created.
+test_that("load_uka_dataset_files cleans each file's Tercen prefix before binding, so differing app-instance numbers don't create duplicate/all-NA columns", {
+  dir1 <- file.path(tempdir(), "uka_files_test5")
+  dir.create(dir1, recursive = TRUE, showWarnings = FALSE)
+
+  path_a <- file.path(dir1, "UKA_PTK_01_DatasetA.csv")
+  path_b <- file.path(dir1, "UKA_PTK_02_DatasetB.csv")
+
+  write.csv(
+    data.frame(
+      `csUKA_app0.UKA0.Sgroup_contrast` = "DrugA_vs_DMSO",
+      `csUKA_app0.UKA0.Kinase Name` = "AKT1",
+      check.names = FALSE
+    ),
+    path_a, row.names = FALSE
+  )
+  write.csv(
+    data.frame(
+      `csUKA_app1.UKA00.Sgroup_contrast` = "DrugB_vs_DMSO",
+      `csUKA_app1.UKA00.Kinase Name` = "MTOR",
+      check.names = FALSE
+    ),
+    path_b, row.names = FALSE
+  )
+
+  out <- load_uka_dataset_files(c(path_a, path_b))
+
+  # exactly one Sgroup_contrast column -- not two prefix variants collapsed
+  # onto the same name
+  expect_equal(sum(colnames(out) == "Sgroup_contrast"), 1)
+  expect_equal(sum(colnames(out) == "Kinase Name"), 1)
+  # and it's populated for every row, not NA for the "other" file's rows
+  expect_false(anyNA(out$Sgroup_contrast))
+  expect_setequal(out$Sgroup_contrast, c("DrugA_vs_DMSO", "DrugB_vs_DMSO"))
+})
