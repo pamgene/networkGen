@@ -4,14 +4,10 @@
 \alias{prep_uka}
 \title{Reshape a raw Tercen-exported UKA table into network-builder input}
 \usage{
-prep_uka(uka, cs = NULL, comparison_col = "Sgroup_contrast")
+prep_uka(uka, comparison_col = "Sgroup_contrast")
 }
 \arguments{
 \item{uka}{Raw UKA data frame, Tercen-style dotted column names.}
-
-\item{cs}{\code{TRUE} to use the per-comparison "Specificity Score"/"Kinase
-Statistic" columns (csUKA), \code{FALSE} to use the "Mean"/"Median" aggregate
-variants. \code{NULL} (default) auto-detects via \code{\link[=detect_csuka]{detect_csuka()}}.}
 
 \item{comparison_col}{Name of the raw column identifying each comparison,
 carried through unchanged to the output. Different Tercen exports name
@@ -29,4 +25,10 @@ builder and \code{\link[=uka_top]{uka_top()}} consume: the comparison-identifyin
 \code{uniprotname}, \code{LogFC} (the kinase statistic), \code{fscore} (the specificity
 score). Passed as the \code{clean_fn} to \code{\link[=build_network_grid]{build_network_grid()}} /
 \code{\link[=run_network_grid]{run_network_grid()}} when the input is raw rather than already reshaped.
+}
+\details{
+Which score columns are read is detected from the columns present
+(\code{\link[=detect_csuka]{detect_csuka()}}): a csUKA export uses the per-comparison "Specificity
+Score"/"Kinase Statistic" columns, a regular export the "Mean"/"Median"
+aggregate variants.
 }

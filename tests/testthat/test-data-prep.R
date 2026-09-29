@@ -39,7 +39,7 @@ test_that("prep_uka selects and renames the mean/median columns", {
     `x.Mean Specificity Score` = c(2.0),
     check.names = FALSE
   )
-  res <- prep_uka(uka, cs = FALSE)
+  res <- prep_uka(uka)
   expect_equal(colnames(res), c("Sgroup_contrast", "uniprotname", "LogFC", "fscore"))
   expect_equal(res$uniprotname, "KIN1")
   expect_equal(res$LogFC, 1.5)
@@ -52,7 +52,7 @@ test_that("prep_uka honours a non-default comparison_col", {
     `x.Median Kinase Statistic` = 1.5, `x.Mean Specificity Score` = 2.0,
     check.names = FALSE
   )
-  res <- prep_uka(uka, cs = FALSE, comparison_col = "Sample")
+  res <- prep_uka(uka, comparison_col = "Sample")
   expect_equal(colnames(res), c("Sample", "uniprotname", "LogFC", "fscore"))
 })
 
@@ -70,13 +70,13 @@ test_that("detect_csuka distinguishes csUKA (bare column names) from regular UKA
   expect_false(detect_csuka("not a data frame"))
 })
 
-test_that("prep_uka auto-detects cs from the columns when cs is NULL (the default)", {
+test_that("prep_uka auto-detects csUKA columns", {
   cs_uka <- data.frame(
     `x.Sgroup_contrast` = "A_vs_B", `x.Kinase Name` = "KIN1",
     `x.Kinase Statistic` = 1.5, `x.Specificity Score` = 2.0,
     check.names = FALSE
   )
-  # no cs argument at all -> auto-detected as csUKA, reads the bare columns
+  # auto-detected as csUKA, reads the bare columns
   res <- prep_uka(cs_uka)
   expect_equal(res$LogFC, 1.5)
   expect_equal(res$fscore, 2.0)

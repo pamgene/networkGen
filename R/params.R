@@ -79,9 +79,7 @@ capture_params <- function(..., .labels = list()) {
 #'   means "no filtering on this cutoff"), `perc_cutoff` (same omit-if-0
 #'   rule), `sens_perc_cutoff` (optional -- the sensitivity-side percentile
 #'   cutoff, gridded independently of `perc_cutoff`; same omit-if-0 rule),
-#'   `rank_uka_abs`, `b`, `w`, `cs` (optional -- recorded in `params.csv`
-#'   via [save_params()], but never shown in the folder name), `art_nodes`
-#'   (optional).
+#'   `rank_uka_abs`, `b`, `w`, `art_nodes` (optional).
 #'
 #' @return The folder name (a single path segment, or `uka_name/components`
 #'   when `sens` is present), as a string.

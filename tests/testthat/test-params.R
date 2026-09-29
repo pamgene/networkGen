@@ -59,20 +59,6 @@ test_that("build_param_folder still shows spec_cutoff/perc_cutoff when they're n
   expect_true(grepl("perc0.5", folder))
 })
 
-test_that("build_param_folder omits cs from the folder name; save_params still records it", {
-  params <- capture_params(
-    uka = "uka_data", ppi_network = "ppi_networkv12",
-    spec_cutoff = 0.7, rank_uka_abs = TRUE, b = 1.5, cs = TRUE
-  )
-
-  expect_false(grepl("cs1|cs0", build_param_folder(params)))
-
-  respath <- file.path(tempdir(), "save_params_cs_test")
-  dir.create(respath, showWarnings = FALSE)
-  df <- save_params(params, respath = respath)
-  expect_true("cs" %in% df$parameter)
-})
-
 test_that("build_param_folder nests under a uka-named subfolder only when sens is present (paired analyses)", {
   # Real callers always pass data frames for uka/sens/ppi_network (never a
   # scalar), so capture_params() records their variable name, not their

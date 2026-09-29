@@ -4,7 +4,7 @@
 \alias{uka_top}
 \title{Filter kinase-activity (UKA) data to its top hits}
 \usage{
-uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, cs = FALSE)
+uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff)
 }
 \arguments{
 \item{uka}{Data frame with columns \code{fscore}, \code{uniprotname}, \code{LogFC}.}
@@ -16,10 +16,6 @@ uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, cs = FALSE)
 \code{\link[=percentile_score_noabs]{percentile_score_noabs()}}.}
 
 \item{perc_cutoff}{Minimum percentile rank (0-1) to keep a row.}
-
-\item{cs}{Unused here, kept for call-site compatibility with the historic
-\code{uka_top()} signature (specificity-score column selection happens
-upstream, in \code{\link[=prep_uka]{prep_uka()}}).}
 }
 \value{
 Data frame with columns \code{name}, \code{prize}, \code{type} ("Kinase"), \code{LogFC}.

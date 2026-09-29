@@ -9,13 +9,10 @@
 #'   [percentile_score_fast()]); if `FALSE`, rank by signed `LogFC` via
 #'   [percentile_score_noabs()].
 #' @param perc_cutoff Minimum percentile rank (0-1) to keep a row.
-#' @param cs Unused here, kept for call-site compatibility with the historic
-#'   `uka_top()` signature (specificity-score column selection happens
-#'   upstream, in [prep_uka()]).
 #'
 #' @return Data frame with columns `name`, `prize`, `type` ("Kinase"), `LogFC`.
 #' @export
-uka_top <- function(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, cs = FALSE) {
+uka_top <- function(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff) {
   uka <- uka %>% dplyr::filter(.data$fscore >= spec_cutoff)
 
   if (rank_uka_abs) {
@@ -78,10 +75,12 @@ overlap_uka_sens <- function(uka, sens) {
 #' score). Passed as the `clean_fn` to [build_network_grid()] /
 #' [run_network_grid()] when the input is raw rather than already reshaped.
 #'
+#' Which score columns are read is detected from the columns present
+#' ([detect_csuka()]): a csUKA export uses the per-comparison "Specificity
+#' Score"/"Kinase Statistic" columns, a regular export the "Mean"/"Median"
+#' aggregate variants.
+#'
 #' @param uka Raw UKA data frame, Tercen-style dotted column names.
-#' @param cs `TRUE` to use the per-comparison "Specificity Score"/"Kinase
-#'   Statistic" columns (csUKA), `FALSE` to use the "Mean"/"Median" aggregate
-#'   variants. `NULL` (default) auto-detects via [detect_csuka()].
 #' @param comparison_col Name of the raw column identifying each comparison,
 #'   carried through unchanged to the output. Different Tercen exports name
 #'   it differently (`"Sgroup_contrast"`, `"Sample"`, ...). Default
@@ -91,8 +90,8 @@ overlap_uka_sens <- function(uka, sens) {
 #' @return Data frame with columns `<comparison_col>`, `uniprotname`,
 #'   `LogFC`, `fscore`.
 #' @export
-prep_uka <- function(uka, cs = NULL, comparison_col = "Sgroup_contrast") {
-  if (is.null(cs)) cs <- detect_csuka(uka)
+prep_uka <- function(uka, comparison_col = "Sgroup_contrast") {
+  cs <- detect_csuka(uka)
   finalscore_col <- if (cs) "Specificity Score" else "Mean Specificity Score"
   stat_col <- if (cs) "Kinase Statistic" else "Median Kinase Statistic"
 
@@ -173,8 +172,7 @@ clean_tercen_columns <- function(df) {
 #' (per-comparison) export carries one value per comparison and names the
 #' same columns without the `Mean`/`Median` prefix -- `Specificity Score`,
 #' `Kinase Statistic`, etc. [prep_uka()] reads different columns for each;
-#' this picks which based on what's present, so callers don't have to pass
-#' a `cs` flag by hand.
+#' this picks which based on what's present -- there is no manual override.
 #'
 #' @param uka A raw UKA data frame (Tercen-style dotted column names are
 #'   fine -- only the last dot-segment is inspected, as [clean_tercen_columns()]
