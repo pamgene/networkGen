@@ -14,7 +14,8 @@ build_network_grid(
   w = 2,
   rank_uka_abs = TRUE,
   ppi_network = string_12.5,
-  dataset_col = "dataset"
+  dataset_col = "dataset",
+  top_n = NA
 )
 }
 \arguments{
@@ -49,10 +50,14 @@ reference network. Defaults to the bundled
 
 \item{dataset_col}{Name of the dataset-identifying column, if present in
 \code{raw_uka}. Default \code{"dataset"}.}
+
+\item{top_n}{Vector, gridded like the cutoffs and passed to \code{\link[=uka_top]{uka_top()}}.
+Default \code{NA} (off) -- a grid without \code{top_n} is the same as before it
+existed (same cells, same folder names).}
 }
 \value{
-A list, one element per \verb{(dataset, condition, spec_cutoff, perc_cutoff, b, w, rank_uka_abs, ppi_network)} combination, each a list
-with \code{dataset}, \code{condition}, \code{spec_cutoff}, \code{perc_cutoff}, \code{b}, \code{w},
+A list, one element per \verb{(dataset, condition, spec_cutoff, perc_cutoff, top_n, b, w, rank_uka_abs, ppi_network)} combination, each a list
+with \code{dataset}, \code{condition}, \code{spec_cutoff}, \code{perc_cutoff}, \code{top_n}, \code{b}, \code{w},
 \code{rank_uka_abs}, \code{ppi_network_name}, \code{ppi_network} (the actual data
 frame for that name), \code{uka_filt} (top-hit terminal-node data frame,
 from \code{\link[=uka_top]{uka_top()}}), \code{uka_cell_all} (that condition's full, unfiltered

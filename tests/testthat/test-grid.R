@@ -236,3 +236,28 @@ test_that("run_network_grid works end-to-end with real PCSF, one folder per (spe
   # both conditions share ONE folder (same spec_cutoff/perc_cutoff), not two
   expect_equal(length(unique(dirname(files))), 1)
 })
+
+test_that("build_network_grid grids top_n and carries it on every cell; the default NA filters nothing", {
+  cleaned_uka <- data.frame(
+    Sgroup_contrast = "condA", uniprotname = paste0("K", 1:5), LogFC = 5:1, fscore = c(5, 4, 3, 2, 1)
+  )
+  grid <- build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast",
+                             spec_cutoff = 0, perc_cutoff = 0, b = 1, top_n = c(2, 3))
+  expect_length(grid, 2)
+  expect_equal(purrr::map_dbl(grid, "top_n"), c(2, 3))
+  expect_equal(purrr::map_int(grid, ~ nrow(.x$uka_filt)), c(2L, 3L))
+
+  default_grid <- build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0, b = 1)
+  expect_true(is.na(default_grid[[1]]$top_n))
+  expect_equal(nrow(default_grid[[1]]$uka_filt), 5)
+})
+
+test_that("prepare_grid_folders gives each top_n its own folder, and leaves the key/folder unchanged when top_n is NA", {
+  cleaned_uka <- data.frame(Sgroup_contrast = "condA", uniprotname = paste0("K", 1:5), LogFC = 5:1, fscore = 5:1)
+  respath <- tempfile("grid_top_n_"); dir.create(respath); on.exit(unlink(respath, recursive = TRUE))
+  grid <- build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast",
+                             spec_cutoff = 0, perc_cutoff = 0, b = 1, w = 2, top_n = c(NA, 30))
+  combos <- prepare_grid_folders(grid, base_labels = list(uka = "uka_data"), respath = respath, uka = cleaned_uka)
+  expect_equal(unname(basename(combos$folders)), c("string_12.5_ukaabs1_b1_w2", "top30_string_12.5_ukaabs1_b1_w2"))
+  expect_equal(combos$combo_key[1], "0||0||1||2||TRUE||string_12.5")
+})

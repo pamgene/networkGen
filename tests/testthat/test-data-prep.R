@@ -81,3 +81,37 @@ test_that("prep_uka auto-detects csUKA columns", {
   expect_equal(res$LogFC, 1.5)
   expect_equal(res$fscore, 2.0)
 })
+
+test_that("uka_top with top_n keeps exactly the top_n highest-fscore kinases, then percentile ranks those", {
+  uka <- data.frame(
+    uniprotname = c("K1", "K2", "K3", "K4", "K2"),
+    LogFC = c(0.1, 3.0, -2.0, 1.0, 5.0),
+    fscore = c(4.0, 3.0, 2.0, 1.0, 0.5)
+  )
+  res <- uka_top(uka, spec_cutoff = 0, perc_cutoff = 0, rank_uka_abs = TRUE, top_n = 3)
+  # K4 is 4th by fscore; the duplicate K2 row (lower fscore) never counts twice
+  expect_setequal(res$name, c("K1", "K2", "K3"))
+  expect_equal(res$LogFC[res$name == "K2"], 3.0)
+  # prizes are ranks within the kept 3, not within all rows
+  expect_equal(max(res$prize), 1)
+  expect_equal(res$prize[res$name == "K1"], 1 / 3)
+})
+
+test_that("uka_top top_n = NA is the same as no top_n, and spec_cutoff still applies before top_n", {
+  uka <- data.frame(uniprotname = c("K1", "K2", "K3"), LogFC = c(3, -1, 0.1), fscore = c(2, 0.5, 1.5))
+  expect_equal(
+    uka_top(uka, spec_cutoff = 1, perc_cutoff = 0, top_n = NA),
+    uka_top(uka, spec_cutoff = 1, perc_cutoff = 0)
+  )
+  # only 2 pass spec_cutoff, so top_n = 3 keeps those 2
+  expect_setequal(uka_top(uka, spec_cutoff = 1, perc_cutoff = 0, top_n = 3)$name, c("K1", "K3"))
+})
+
+test_that("uka_top with top_n keeps the same count under a name shuffle (the permutation null stays size-matched)", {
+  set.seed(1)
+  uka <- data.frame(uniprotname = paste0("K", 1:50), LogFC = rnorm(50), fscore = runif(50, 0, 3))
+  shuffled <- uka
+  shuffled$uniprotname <- sample(shuffled$uniprotname)
+  expect_equal(nrow(uka_top(uka, 0, perc_cutoff = 0, top_n = 30)), 30)
+  expect_equal(nrow(uka_top(shuffled, 0, perc_cutoff = 0, top_n = 30)), 30)
+})

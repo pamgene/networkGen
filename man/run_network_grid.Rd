@@ -15,6 +15,7 @@ run_network_grid(
   ppi_network = string_12.5,
   rank_uka_abs = TRUE,
   dataset_col = "dataset",
+  top_n = NA,
   sens = NULL,
   sens_perc_cutoff = NULL,
   sens_balance = TRUE,
@@ -56,6 +57,10 @@ reference network. Defaults to the bundled
 
 \item{dataset_col}{Name of the dataset-identifying column, if present in
 \code{raw_uka}. Default \code{"dataset"}.}
+
+\item{top_n}{Vector, gridded like the cutoffs and passed to \code{\link[=uka_top]{uka_top()}}.
+Default \code{NA} (off) -- a grid without \code{top_n} is the same as before it
+existed (same cells, same folder names).}
 
 \item{sens}{Optional raw sensitivity data frame (columns \code{uniprotname},
 \code{LogFC} -- the shape \code{\link[=sens_top]{sens_top()}} expects); if given, builds paired

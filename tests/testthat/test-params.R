@@ -142,3 +142,12 @@ test_that("save_params writes a clean parameter/value table and drops uka_fam/re
   expect_false("respath" %in% df$parameter)
   expect_true(file.exists(file.path(respath, "params.csv")))
 })
+
+test_that("build_param_folder shows top_n as top<N> after the cutoffs, and omits it when absent or NA", {
+  folder_of <- function(...) build_param_folder(capture_params(
+    uka = "uka_data", ppi_network = "ppi_networkv12", spec_cutoff = 0, perc_cutoff = 0, ..., rank_uka_abs = TRUE, b = 1, w = 2
+  ))
+  expect_equal(folder_of(top_n = 30), "top30_ppi_networkv12_ukaabs1_b1_w2")
+  expect_equal(folder_of(top_n = NA), "ppi_networkv12_ukaabs1_b1_w2")
+  expect_equal(folder_of(), "ppi_networkv12_ukaabs1_b1_w2")
+})

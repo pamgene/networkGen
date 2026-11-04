@@ -1,7 +1,8 @@
 #' Filter kinase-activity (UKA) data to its top hits
 #'
-#' Filters `uka` to rows passing `spec_cutoff`, percentile-ranks the
-#' survivors by `LogFC`, and keeps those at or above `perc_cutoff`.
+#' Filters `uka` to rows passing `spec_cutoff`, optionally keeps only the
+#' `top_n` highest-`fscore` kinases of those, percentile-ranks the survivors
+#' by `LogFC`, and keeps those at or above `perc_cutoff`.
 #'
 #' @param uka Data frame with columns `fscore`, `uniprotname`, `LogFC`.
 #' @param spec_cutoff Minimum `fscore` (specificity score) to keep a row.
@@ -9,11 +10,25 @@
 #'   [percentile_score_fast()]); if `FALSE`, rank by signed `LogFC` via
 #'   [percentile_score_noabs()].
 #' @param perc_cutoff Minimum percentile rank (0-1) to keep a row.
+#' @param top_n If not `NA` (the default, meaning off), keep only the `top_n`
+#'   distinct kinases with the highest `fscore` (after `spec_cutoff`). Ties at
+#'   the boundary are broken by row order, so exactly `top_n` kinases are
+#'   kept whenever at least that many pass `spec_cutoff`. Fixes the terminal
+#'   node count across inputs that call different numbers of kinases
+#'   specific (e.g. two UKA versions), which `spec_cutoff`/`perc_cutoff`
+#'   can't.
 #'
 #' @return Data frame with columns `name`, `prize`, `type` ("Kinase"), `LogFC`.
 #' @export
-uka_top <- function(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff) {
+uka_top <- function(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, top_n = NA) {
   uka <- uka %>% dplyr::filter(.data$fscore >= spec_cutoff)
+
+  if (!is.na(top_n)) {
+    uka <- uka %>%
+      dplyr::arrange(dplyr::desc(.data$fscore)) %>%
+      dplyr::distinct(.data$uniprotname, .keep_all = TRUE) %>%
+      utils::head(top_n)
+  }
 
   if (rank_uka_abs) {
     uka_rank <- percentile_score_fast(uka, uniprotname, LogFC)

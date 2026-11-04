@@ -4,7 +4,7 @@
 \alias{uka_top}
 \title{Filter kinase-activity (UKA) data to its top hits}
 \usage{
-uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff)
+uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff, top_n = NA)
 }
 \arguments{
 \item{uka}{Data frame with columns \code{fscore}, \code{uniprotname}, \code{LogFC}.}
@@ -16,11 +16,20 @@ uka_top(uka, spec_cutoff, rank_uka_abs = TRUE, perc_cutoff)
 \code{\link[=percentile_score_noabs]{percentile_score_noabs()}}.}
 
 \item{perc_cutoff}{Minimum percentile rank (0-1) to keep a row.}
+
+\item{top_n}{If not \code{NA} (the default, meaning off), keep only the \code{top_n}
+distinct kinases with the highest \code{fscore} (after \code{spec_cutoff}). Ties at
+the boundary are broken by row order, so exactly \code{top_n} kinases are
+kept whenever at least that many pass \code{spec_cutoff}. Fixes the terminal
+node count across inputs that call different numbers of kinases
+specific (e.g. two UKA versions), which \code{spec_cutoff}/\code{perc_cutoff}
+can't.}
 }
 \value{
 Data frame with columns \code{name}, \code{prize}, \code{type} ("Kinase"), \code{LogFC}.
 }
 \description{
-Filters \code{uka} to rows passing \code{spec_cutoff}, percentile-ranks the
-survivors by \code{LogFC}, and keeps those at or above \code{perc_cutoff}.
+Filters \code{uka} to rows passing \code{spec_cutoff}, optionally keeps only the
+\code{top_n} highest-\code{fscore} kinases of those, percentile-ranks the survivors
+by \code{LogFC}, and keeps those at or above \code{perc_cutoff}.
 }
