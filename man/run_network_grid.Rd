@@ -16,6 +16,7 @@ run_network_grid(
   rank_uka_abs = TRUE,
   dataset_col = "dataset",
   top_n = NA,
+  top_n_label = NULL,
   sens = NULL,
   sens_perc_cutoff = NULL,
   sens_balance = TRUE,
@@ -60,7 +61,20 @@ reference network. Defaults to the bundled
 
 \item{top_n}{Vector, gridded like the cutoffs and passed to \code{\link[=uka_top]{uka_top()}}.
 Default \code{NA} (off) -- a grid without \code{top_n} is the same as before it
-existed (same cells, same folder names).}
+existed (same cells, same folder names).
+
+Per-condition mode: a NAMED vector (names = condition values) gives each
+condition its own N instead of gridding -- one cell per condition, with
+\code{top_n} = that condition's value. Every condition must have a name in
+\code{top_n}, and \code{top_n_label} is then required: all these cells share one
+folder, named \verb{top<top_n_label>} (see \code{\link[=prepare_grid_folders]{prepare_grid_folders()}}), since
+no single N describes them. E.g. size-matching two inputs per condition
+(N = the smaller of their two specific-kinase counts).}
+
+\item{top_n_label}{Folder label for per-condition \code{top_n} (required then,
+ignored otherwise), e.g. \code{"min-versionA-versionB"}. It names the folder
+that the per-condition rows are resumed from, so give each distinct set
+of per-condition N values its own label.}
 
 \item{sens}{Optional raw sensitivity data frame (columns \code{uniprotname},
 \code{LogFC} -- the shape \code{\link[=sens_top]{sens_top()}} expects); if given, builds paired

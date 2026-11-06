@@ -261,3 +261,30 @@ test_that("prepare_grid_folders gives each top_n its own folder, and leaves the 
   expect_equal(unname(basename(combos$folders)), c("string_12.5_ukaabs1_b1_w2", "top30_string_12.5_ukaabs1_b1_w2"))
   expect_equal(combos$combo_key[1], "0||0||1||2||TRUE||string_12.5")
 })
+
+test_that("a named top_n gives each condition its own N, in one top<label> folder", {
+  cleaned_uka <- data.frame(
+    Sgroup_contrast = rep(c("condA", "condB"), each = 5), uniprotname = paste0("K", 1:10),
+    LogFC = 10:1, fscore = rep(5:1, 2)
+  )
+  grid <- build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0,
+                             b = 1, w = 2, top_n = c(condB = 4, condA = 2), top_n_label = "min-x-y")
+  expect_length(grid, 2)
+  expect_equal(purrr::map_chr(grid, "condition"), c("condA", "condB"))
+  expect_equal(purrr::map_dbl(grid, "top_n"), c(2, 4))
+  expect_equal(purrr::map_int(grid, ~ nrow(.x$uka_filt)), c(2L, 4L))
+  expect_equal(purrr::map_chr(grid, "top_n_label"), c("min-x-y", "min-x-y"))
+
+  respath <- tempfile("grid_top_n_cond_"); dir.create(respath); on.exit(unlink(respath, recursive = TRUE))
+  combos <- prepare_grid_folders(grid, base_labels = list(uka = "uka_data"), respath = respath, uka = cleaned_uka)
+  expect_equal(unname(basename(combos$folders)), "topmin-x-y_string_12.5_ukaabs1_b1_w2")
+  expect_equal(length(unique(combos$combo_key)), 1)
+})
+
+test_that("a named top_n needs a label and a value for every condition", {
+  cleaned_uka <- data.frame(Sgroup_contrast = c("condA", "condB"), uniprotname = c("K1", "K2"), LogFC = 1:2, fscore = 1:2)
+  expect_error(build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0,
+                                  top_n = c(condA = 1, condB = 1)), "top_n_label is required")
+  expect_error(build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast", spec_cutoff = 0, perc_cutoff = 0,
+                                  top_n = c(condA = 1), top_n_label = "x"), "no value for condition 'condB'")
+})

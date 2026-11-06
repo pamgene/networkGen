@@ -79,7 +79,8 @@ capture_params <- function(..., .labels = list()) {
 #'   means "no filtering on this cutoff"), `perc_cutoff` (same omit-if-0
 #'   rule), `sens_perc_cutoff` (optional -- the sensitivity-side percentile
 #'   cutoff, gridded independently of `perc_cutoff`; same omit-if-0 rule),
-#'   `top_n` (optional -- shown as `top<N>`, omitted when absent or `NA`),
+#'   `top_n` (optional -- shown as `top<N>`, omitted when absent or `NA`; a
+#'   per-condition grid passes its `top_n_label` here instead, shown as `top<label>`),
 #'   `rank_uka_abs`, `b`, `w`, `art_nodes` (optional).
 #'
 #' @return The folder name (a single path segment, or `uka_name/components`

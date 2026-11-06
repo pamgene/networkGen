@@ -15,7 +15,8 @@ build_network_grid(
   rank_uka_abs = TRUE,
   ppi_network = string_12.5,
   dataset_col = "dataset",
-  top_n = NA
+  top_n = NA,
+  top_n_label = NULL
 )
 }
 \arguments{
@@ -53,7 +54,20 @@ reference network. Defaults to the bundled
 
 \item{top_n}{Vector, gridded like the cutoffs and passed to \code{\link[=uka_top]{uka_top()}}.
 Default \code{NA} (off) -- a grid without \code{top_n} is the same as before it
-existed (same cells, same folder names).}
+existed (same cells, same folder names).
+
+Per-condition mode: a NAMED vector (names = condition values) gives each
+condition its own N instead of gridding -- one cell per condition, with
+\code{top_n} = that condition's value. Every condition must have a name in
+\code{top_n}, and \code{top_n_label} is then required: all these cells share one
+folder, named \verb{top<top_n_label>} (see \code{\link[=prepare_grid_folders]{prepare_grid_folders()}}), since
+no single N describes them. E.g. size-matching two inputs per condition
+(N = the smaller of their two specific-kinase counts).}
+
+\item{top_n_label}{Folder label for per-condition \code{top_n} (required then,
+ignored otherwise), e.g. \code{"min-versionA-versionB"}. It names the folder
+that the per-condition rows are resumed from, so give each distinct set
+of per-condition N values its own label.}
 }
 \value{
 A list, one element per \verb{(dataset, condition, spec_cutoff, perc_cutoff, top_n, b, w, rank_uka_abs, ppi_network)} combination, each a list
@@ -61,7 +75,8 @@ with \code{dataset}, \code{condition}, \code{spec_cutoff}, \code{perc_cutoff}, \
 \code{rank_uka_abs}, \code{ppi_network_name}, \code{ppi_network} (the actual data
 frame for that name), \code{uka_filt} (top-hit terminal-node data frame,
 from \code{\link[=uka_top]{uka_top()}}), \code{uka_cell_all} (that condition's full, unfiltered
-rows -- for permutation building).
+rows -- for permutation building), and, in per-condition \code{top_n} mode,
+\code{top_n_label}.
 }
 \description{
 The one place \verb{dataset x condition x spec_cutoff x perc_cutoff x b x w x rank_uka_abs x ppi_network} gets expanded -- both \code{\link[=run_network_grid]{run_network_grid()}}

@@ -65,6 +65,18 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #' @param top_n Vector, gridded like the cutoffs and passed to [uka_top()].
 #'   Default `NA` (off) -- a grid without `top_n` is the same as before it
 #'   existed (same cells, same folder names).
+#'
+#'   Per-condition mode: a NAMED vector (names = condition values) gives each
+#'   condition its own N instead of gridding -- one cell per condition, with
+#'   `top_n` = that condition's value. Every condition must have a name in
+#'   `top_n`, and `top_n_label` is then required: all these cells share one
+#'   folder, named `top<top_n_label>` (see [prepare_grid_folders()]), since
+#'   no single N describes them. E.g. size-matching two inputs per condition
+#'   (N = the smaller of their two specific-kinase counts).
+#' @param top_n_label Folder label for per-condition `top_n` (required then,
+#'   ignored otherwise), e.g. `"min-versionA-versionB"`. It names the folder
+#'   that the per-condition rows are resumed from, so give each distinct set
+#'   of per-condition N values its own label.
 #' @param ppi_network A data frame with columns `head`, `tail`, `cost`, or a
 #'   fully named list of them (e.g. `list(v12_5 = string_12.5,
 #'   kins502 = ppi_networkv12_502_kins)`) to grid across more than one
@@ -79,13 +91,22 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   `rank_uka_abs`, `ppi_network_name`, `ppi_network` (the actual data
 #'   frame for that name), `uka_filt` (top-hit terminal-node data frame,
 #'   from [uka_top()]), `uka_cell_all` (that condition's full, unfiltered
-#'   rows -- for permutation building).
+#'   rows -- for permutation building), and, in per-condition `top_n` mode,
+#'   `top_n_label`.
 #' @export
 build_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                                 spec_cutoff, perc_cutoff, b = 2, w = 2, rank_uka_abs = TRUE,
-                                ppi_network = string_12.5, dataset_col = "dataset", top_n = NA) {
+                                ppi_network = string_12.5, dataset_col = "dataset", top_n = NA,
+                                top_n_label = NULL) {
   ppi_label <- rlang::as_label(rlang::enquo(ppi_network))
   ppi_list <- normalize_ppi_network_list(ppi_network, ppi_label)
+
+  per_condition <- !is.null(names(top_n))
+  if (per_condition && (is.null(top_n_label) || !nzchar(top_n_label))) {
+    stop("top_n_label is required when top_n is a named (per-condition) vector.", call. = FALSE)
+  }
+  top_n_by_condition <- top_n
+  if (per_condition) top_n <- NA
 
   datasets <- if (dataset_col %in% colnames(raw_uka)) {
     split(raw_uka, raw_uka[[dataset_col]])
@@ -104,13 +125,21 @@ build_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
     )
 
     purrr::pmap(combos, function(condition, spec_cutoff, perc_cutoff, top_n, b, w, rank_uka_abs, ppi_network_name) {
+      if (per_condition) {
+        if (!condition %in% names(top_n_by_condition)) {
+          stop("per-condition top_n has no value for condition '", condition, "'.", call. = FALSE)
+        }
+        top_n <- unname(top_n_by_condition[[condition]])
+      }
       uka_cell_all <- cleaned[cleaned[[comparison_col]] == condition, ]
       uka_filt <- uka_top(uka_cell_all, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, rank_uka_abs = rank_uka_abs, top_n = top_n)
-      list(
+      cell <- list(
         dataset = ds_name, condition = condition, spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, top_n = top_n,
         b = b, w = w, rank_uka_abs = rank_uka_abs, ppi_network_name = ppi_network_name,
         ppi_network = ppi_list[[ppi_network_name]], uka_filt = uka_filt, uka_cell_all = uka_cell_all
       )
+      if (per_condition) cell$top_n_label <- top_n_label
+      cell
     })
   })
 
@@ -152,11 +181,17 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
   # shared function needing to know what it means. top_n is handled the same
   # way, but only when set (not NA), so a grid without it keeps its old keys
   # and folders.
-  has_top_n <- function(cell) !is.null(cell$top_n) && !is.na(cell$top_n)
+  # Per-condition top_n (build_network_grid() with a named top_n): the cells' N differ, so the folder is
+  # named by their shared top_n_label instead of top<N>.
+  top_n_shown <- function(cell) {
+    if (!is.null(cell$top_n_label)) return(cell$top_n_label)
+    if (!is.null(cell$top_n) && !is.na(cell$top_n)) return(cell$top_n)
+    NULL
+  }
   combo_key_of <- function(cell) {
     parts <- c(cell$spec_cutoff, cell$perc_cutoff, cell$b, cell$w, cell$rank_uka_abs, cell$ppi_network_name)
     if (!is.null(cell$sens_perc_cutoff)) parts <- c(parts, cell$sens_perc_cutoff)
-    if (has_top_n(cell)) parts <- c(parts, paste0("top", cell$top_n))
+    if (!is.null(top_n_shown(cell))) parts <- c(parts, paste0("top", top_n_shown(cell)))
     paste(parts, collapse = "||")
   }
   combo_key <- purrr::map_chr(grid, combo_key_of)
@@ -165,7 +200,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
   folders <- purrr::map_chr(unique_cells, function(cell) {
     cell_labels <- utils::modifyList(base_labels, list(ppi_network = cell$ppi_network_name))
     extra_args <- if (!is.null(cell$sens_perc_cutoff)) list(sens_perc_cutoff = cell$sens_perc_cutoff) else list()
-    if (has_top_n(cell)) extra_args$top_n <- cell$top_n
+    if (!is.null(top_n_shown(cell))) extra_args$top_n <- top_n_shown(cell)
     do.call(prepare_fn, c(
       list(
         spec_cutoff = cell$spec_cutoff, perc_cutoff = cell$perc_cutoff,
@@ -233,7 +268,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 run_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                               spec_cutoff, perc_cutoff, b = 2, w = 2,
                               ppi_network = string_12.5,
-                              rank_uka_abs = TRUE, dataset_col = "dataset", top_n = NA,
+                              rank_uka_abs = TRUE, dataset_col = "dataset", top_n = NA, top_n_label = NULL,
                               sens = NULL, sens_perc_cutoff = NULL, sens_balance = TRUE,
                               respath, write = TRUE, max_tasks = 500, ...) {
   # Captured immediately, before anything else (including the is.null()
@@ -265,7 +300,8 @@ run_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
   uka_grid <- build_network_grid(
     raw_uka, clean_fn = clean_fn, comparison_col = comparison_col,
     spec_cutoff = spec_cutoff, perc_cutoff = perc_cutoff, b = b, w = w,
-    rank_uka_abs = rank_uka_abs, ppi_network = ppi_list, dataset_col = dataset_col, top_n = top_n
+    rank_uka_abs = rank_uka_abs, ppi_network = ppi_list, dataset_col = dataset_col, top_n = top_n,
+    top_n_label = top_n_label
   )
 
   # sens_perc_cutoff grids independently of every uka-side dimension --
