@@ -13,7 +13,7 @@ build_network_grid(
   b = 2,
   w = 2,
   rank_uka_abs = TRUE,
-  ppi_network = string_12.5,
+  ppi_network = string_12.5_direct,
   dataset_col = "dataset",
   top_n = NA,
   top_n_label = NULL
@@ -47,7 +47,7 @@ default to \code{2} (see \code{\link[=PCSF_rand_pg]{PCSF_rand_pg()}}).}
 \item{ppi_network}{A data frame with columns \code{head}, \code{tail}, \code{cost}, or a
 fully named list of them (e.g. \code{list(v12_5 = string_12.5, kins502 = ppi_networkv12_502_kins)}) to grid across more than one
 reference network. Defaults to the bundled
-\link{string_12.5}.}
+\link{string_12.5_direct}.}
 
 \item{dataset_col}{Name of the dataset-identifying column, if present in
 \code{raw_uka}. Default \code{"dataset"}.}

@@ -138,13 +138,13 @@ test_that("written nodes/edges/wc_df filenames omit _spec when spec_cutoff is 0,
   expect_true(file.exists(file.path(respath_nonzero, "wc_df_cond_spec0.7.csv")))
 })
 
-test_that("ppi_network defaults to the bundled string_12.5", {
-  expect_identical(formals(generate_kinase_network)$ppi_network, as.symbol("string_12.5"))
-  expect_identical(formals(generate_paired_network)$ppi_network, as.symbol("string_12.5"))
+test_that("ppi_network defaults to the bundled string_12.5_direct", {
+  expect_identical(formals(generate_kinase_network)$ppi_network, as.symbol("string_12.5_direct"))
+  expect_identical(formals(generate_paired_network)$ppi_network, as.symbol("string_12.5_direct"))
 })
 
 # This is the one deliberately "heavy" test in the suite -- it runs PCSF
-# over the full ~1.2M-edge bundled string_12.5, rather than a tiny
+# over the full ~0.86M-row bundled string_12.5_direct, rather than a tiny
 # hand-built graph. Everything else in this file uses small toy networks
 # precisely so the rest of the suite stays fast; this test exists only to
 # confirm the default-argument wiring and real-scale behavior work, not to
@@ -160,7 +160,7 @@ test_that("generate_kinase_network works against the real bundled reference netw
   skip_if_not(pcsf_functional(), "real PCSF compiled package not installed in this dev environment")
 
   set.seed(42)
-  real_genes <- sample(unique(c(string_12.5$head, string_12.5$tail)), 15)
+  real_genes <- sample(unique(c(string_12.5_direct$head, string_12.5_direct$tail)), 15)
   uka_real <- data.frame(name = real_genes, prize = stats::runif(15, 0.5, 1), type = "Kinase", LogFC = stats::rnorm(15))
 
   # 15 random genes aren't a biologically connected set: at the default

@@ -258,8 +258,8 @@ test_that("prepare_grid_folders gives each top_n its own folder, and leaves the 
   grid <- build_network_grid(cleaned_uka, comparison_col = "Sgroup_contrast",
                              spec_cutoff = 0, perc_cutoff = 0, b = 1, w = 2, top_n = c(NA, 30))
   combos <- prepare_grid_folders(grid, base_labels = list(uka = "uka_data"), respath = respath, uka = cleaned_uka)
-  expect_equal(unname(basename(combos$folders)), c("string_12.5_ukaabs1_b1_w2", "top30_string_12.5_ukaabs1_b1_w2"))
-  expect_equal(combos$combo_key[1], "0||0||1||2||TRUE||string_12.5")
+  expect_equal(unname(basename(combos$folders)), c("string_12.5_direct_ukaabs1_b1_w2", "top30_string_12.5_direct_ukaabs1_b1_w2"))
+  expect_equal(combos$combo_key[1], "0||0||1||2||TRUE||string_12.5_direct")
 })
 
 test_that("a named top_n gives each condition its own N, in one top<label> folder", {
@@ -277,7 +277,7 @@ test_that("a named top_n gives each condition its own N, in one top<label> folde
 
   respath <- tempfile("grid_top_n_cond_"); dir.create(respath); on.exit(unlink(respath, recursive = TRUE))
   combos <- prepare_grid_folders(grid, base_labels = list(uka = "uka_data"), respath = respath, uka = cleaned_uka)
-  expect_equal(unname(basename(combos$folders)), "topmin-x-y_string_12.5_ukaabs1_b1_w2")
+  expect_equal(unname(basename(combos$folders)), "topmin-x-y_string_12.5_direct_ukaabs1_b1_w2")
   expect_equal(length(unique(combos$combo_key)), 1)
 })
 

@@ -81,7 +81,7 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #'   fully named list of them (e.g. `list(v12_5 = string_12.5,
 #'   kins502 = ppi_networkv12_502_kins)`) to grid across more than one
 #'   reference network. Defaults to the bundled
-#'   [string_12.5].
+#'   [string_12.5_direct].
 #' @param dataset_col Name of the dataset-identifying column, if present in
 #'   `raw_uka`. Default `"dataset"`.
 #'
@@ -96,7 +96,7 @@ normalize_ppi_network_list <- function(ppi_network, single_label) {
 #' @export
 build_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                                 spec_cutoff, perc_cutoff, b = 2, w = 2, rank_uka_abs = TRUE,
-                                ppi_network = string_12.5, dataset_col = "dataset", top_n = NA,
+                                ppi_network = string_12.5_direct, dataset_col = "dataset", top_n = NA,
                                 top_n_label = NULL) {
   ppi_label <- rlang::as_label(rlang::enquo(ppi_network))
   ppi_list <- normalize_ppi_network_list(ppi_network, ppi_label)
@@ -267,7 +267,7 @@ prepare_grid_folders <- function(grid, prepare_fn = prepare_run_params, base_lab
 #' @export
 run_network_grid <- function(raw_uka, clean_fn = identity, comparison_col,
                               spec_cutoff, perc_cutoff, b = 2, w = 2,
-                              ppi_network = string_12.5,
+                              ppi_network = string_12.5_direct,
                               rank_uka_abs = TRUE, dataset_col = "dataset", top_n = NA, top_n_label = NULL,
                               sens = NULL, sens_perc_cutoff = NULL, sens_balance = TRUE,
                               respath, write = TRUE, max_tasks = 500, ...) {

@@ -8,14 +8,20 @@ three-package suite -- see [`networkScore`](../networkScore) and
 
 ## Reference PPI network
 
-The reference PPI network -- `string_12.5`, the
-default `ppi_network`, bundled as package data -- is built from STRING
-v12.5. An edge is kept if it has direct, non-transferred support from at
-least one of the `experiments`, `database`, `textmining`, or
-`coexpression` evidence channels. The STRING combined score is scaled
-between 0-1, then filtered for combined score `>= 0.5`. Combined score is
-converted to cost: `cost = 1 - (combined score/1000)`. See:
+The reference PPI network -- `string_12.5_direct`, the default
+`ppi_network`, bundled as package data -- is built from STRING v12.5
+(human) with direct evidence only: `experiments`, `database` and
+`textmining`. Coexpression, evidence transferred from other species and
+genomic context are not used. The edge score is recomputed from those
+channels with STRING's own combination rule
+([FAQ](https://string-db.org/help/faq/), `combine_subscores.v2.py`), kept
+if `>= 0.5`, and converted to cost: `cost = 1 - score`. Built by
+`data-raw/string_12.5_direct.R` with
 <https://github.com/pamgene/STRING_download>.
+
+The previous default, `string_12.5`, is still bundled to reproduce earlier
+results. It filtered on STRING's full combined score, which also contains
+transferred and genomic-context evidence, and it used coexpression.
 
 ## Install
 

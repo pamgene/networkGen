@@ -16,7 +16,7 @@ ppi_networkv12_502_kins
 }
 \description{
 A restriction of an earlier STRING v12 build of the reference network
-(see \link{string_12.5}) to interactions involving a curated set of 502
+(see \link{string_12.5_direct}) to interactions involving a curated set of 502
 kinases, 107,508 rows. Same \code{head}/\code{tail}/\code{cost} schema. Not the
 default -- pass explicitly as \code{ppi_network} when working with kinases
 only (e.g. faster iteration during development). Not yet regenerated

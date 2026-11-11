@@ -3,7 +3,7 @@
 \docType{data}
 \name{string_12.5}
 \alias{string_12.5}
-\title{Reference human protein-protein interaction network (STRING v12.5)}
+\title{Previous reference PPI network (STRING v12.5, before 2026-11-11)}
 \format{
 A tibble with 1,218,528 rows and 3 columns:
 \describe{
@@ -19,13 +19,12 @@ A tibble with 1,218,528 rows and 3 columns:
 string_12.5
 }
 \description{
-The reference PPI network -- \code{string_12.5} -- is built from STRING
-v12.5. An edge is kept if it has direct, non-transferred support from
-at least one of the \code{experiments}, \code{database}, \code{textmining}, or
-\code{coexpression} evidence channels. The STRING combined score is scaled
-between 0-1, then filtered for combined score \verb{>= 0.5}. Combined score
-is converted to cost: \verb{cost = 1 - (combined score/1000)}. This is the
-default \code{ppi_network} for \code{\link[=generate_paired_network]{generate_paired_network()}} and
-\code{\link[=generate_kinase_network]{generate_kinase_network()}}.
+The default \code{ppi_network} until 2026-11-11, kept to reproduce earlier
+results. An edge is kept if at least one of the \code{experiments},
+\code{database}, \code{textmining} or \code{coexpression} channels has direct evidence
+(> 0) and STRING's full \code{combined_score} is \verb{>= 0.5}. That combined
+score also contains evidence transferred from other species and genomic
+context, so those still decide which edges pass and set their cost.
+\verb{cost = 1 - (combined score/1000)}. Superseded by \link{string_12.5_direct}.
 }
 \keyword{datasets}

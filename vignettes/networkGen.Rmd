@@ -90,22 +90,22 @@ through high-degree hub genes).
 Full parameter documentation: `` ?generate_kinase_network ``.
 
 `networkGen` also ships a real reference PPI network as package data --
-`string_12.5` (the default `ppi_network`, used
-automatically if you don't pass one), built from STRING v12.5. An edge is
-kept if it has direct, non-transferred support from at least one of the
-`experiments`, `database`, `textmining`, or `coexpression` evidence
-channels. The STRING combined score is scaled between 0-1, then filtered
-for combined score `>= 0.5`. Combined score is converted to cost:
-`cost = 1 - (combined score/1000)`. See:
-<https://github.com/pamgene/STRING_download>.
+`string_12.5_direct` (the default `ppi_network`, used
+automatically if you don't pass one), built from STRING v12.5 with direct
+evidence only (`experiments`, `database`, `textmining`; no coexpression,
+transferred or genomic-context evidence). The edge score is recomputed
+from those channels with STRING's own combination rule, kept if `>= 0.5`,
+and converted to cost: `cost = 1 - score`. See `?string_12.5_direct` and
+<https://github.com/pamgene/STRING_download>. The previous default,
+`string_12.5`, is still bundled to reproduce earlier results.
 
 Also bundled: `ppi_networkv12_502_kins`, a narrower, older (STRING v12)
-variant restricted to 502 kinases, ~107K edges vs. ~1.2M for the full
+variant restricted to 502 kinases, ~107K edges vs. ~0.86M for the full
 network -- good enough for a kinase-activity network and much faster, used
 throughout the rest of this vignette:
 
 ```{r ref-network}
-nrow(string_12.5)
+nrow(string_12.5_direct)
 nrow(ppi_networkv12_502_kins)
 head(ppi_networkv12_502_kins)
 ```
